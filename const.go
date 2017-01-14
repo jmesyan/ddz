@@ -16,4 +16,26 @@ const (
     CardRank2 = 0x0D
     CardRankr = 0x0E
     CardRankR = 0x0F
+
+    CardRankBeg = CardRank3
+    CardRankEnd = CardRankR
+
+    CardSuitClub = 0x10
+    CardSuitDiamond = 0x20
+    CardSuitHeart = 0x30
+    CardSuitSpade = 0x40
+
+    CardSetLength = 54
 )
+
+func CardRank(card uint8) {
+    return card & 0x0F
+}
+
+func CardSuit(card uint8) {
+    return card & 0xF0
+}
+
+func Card(suit uint8, rank uint8) {
+    return suit | rank
+}
