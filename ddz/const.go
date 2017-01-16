@@ -1,4 +1,4 @@
-package golandlord
+package ddz
 
 const (
     CardRank3 = 0x01
@@ -27,15 +27,3 @@ const (
 
     CardSetLength = 54
 )
-
-func CardRank(card uint8) {
-    return card & 0x0F
-}
-
-func CardSuit(card uint8) {
-    return card & 0xF0
-}
-
-func Card(suit uint8, rank uint8) {
-    return suit | rank
-}
