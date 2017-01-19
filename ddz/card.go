@@ -1,5 +1,9 @@
 package ddz
 
+import (
+    "strings"
+)
+
 type CardSlice []uint8
 
 func CardRank(card uint8) uint8 {
@@ -25,6 +29,100 @@ func MakeCardSet() CardSlice {
     return slice
 }
 
-func CardArrayFromString(str string) CardSlice {
-    return nil
+func CardToStr(card uint8) string {
+    var str string
+    suit := CardSuit(card)
+    rank := CardRank(card)
+
+    switch suit {
+    case CardSuitSpade:
+        str += "\u2660"
+    case CardSuitClub:
+        str += "\u2663"
+    case CardSuitHeart:
+        str += "\u2665"
+    case CardSuitDiamond:
+        str += "\u2666"
+    }
+
+    switch {
+    case rank == CardRankT:
+        str += "T"
+    case rank == CardRankJ:
+        str += "J"
+    case rank == CardRankQ:
+        str += "Q"
+    case rank == CardRankK:
+        str += "K"
+    case rank == CardRankA:
+        str += "A"
+    case rank == CardRank2:
+        str += "2"
+    case rank == CardRankr:
+        str += "r"
+    case rank == CardRankR:
+        str += "R"
+    case rank <= CardRank9 && rank >= CardRank3:
+        str += string(uint8('3') + rank - CardRank3)
+    }
+
+    return str
+}
+
+func CardSliceFromString(str string) CardSlice {
+    slice := make(CardSlice, 0);
+    var suit, rank uint8
+    for _, v := range (str) {
+        switch {
+        case v == 9824:
+            suit = CardSuitSpade
+        case v == 9827:
+            suit = CardSuitClub
+        case v == 9829:
+            suit = CardSuitHeart
+        case v == 9830:
+            suit = CardSuitDiamond
+        case v == 'T':
+            rank = CardRankT
+        case v == 'J':
+            rank = CardRankJ
+        case v == 'Q':
+            rank = CardRankQ
+        case v == 'K':
+            rank = CardRankK
+        case v == 'A':
+            rank = CardRankA
+        case v == '2':
+            rank = CardRank2
+        case v == 'r':
+            rank = CardRankr
+        case v == 'R':
+            rank = CardRankR
+        case v <= '9' && v >= '3':
+            rank = CardRank3 + uint8(v - '3')
+        }
+
+        if suit != 0 && rank != 0 {
+            slice = append(slice, Card(suit, rank))
+            suit, rank = 0, 0
+        }
+    }
+    return slice
+}
+
+func (cs *CardSlice) ToString() string {
+    return cs.ToString2(" ")
+}
+
+func (cs *CardSlice) ToString2(sep string) string {
+    cards := make([]string, 0)
+    for _, v := range(*cs) {
+         cards = append(cards, CardToStr(v))
+    }
+
+    if len(sep) == 0 {
+        return strings.Join(cards, " ")
+    } else {
+        return strings.Join(cards, sep)
+    }
 }
