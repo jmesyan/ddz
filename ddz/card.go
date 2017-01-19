@@ -2,6 +2,7 @@ package ddz
 
 import (
     "strings"
+    "sort"
 )
 
 type CardSlice []uint8
@@ -110,13 +111,13 @@ func CardSliceFromString(str string) CardSlice {
     return slice
 }
 
-func (cs *CardSlice) ToString() string {
+func (cs CardSlice) ToString() string {
     return cs.ToString2(" ")
 }
 
-func (cs *CardSlice) ToString2(sep string) string {
+func (cs CardSlice) ToString2(sep string) string {
     cards := make([]string, 0)
-    for _, v := range(*cs) {
+    for _, v := range(cs) {
          cards = append(cards, CardToStr(v))
     }
 
@@ -125,4 +126,26 @@ func (cs *CardSlice) ToString2(sep string) string {
     } else {
         return strings.Join(cards, sep)
     }
+}
+
+func (cs CardSlice) Len() int {
+    return len(cs)
+}
+
+func (cs CardSlice) Swap(i, j int) {
+    cs[i], cs[j] = cs[j], cs[i]
+}
+
+func (cs CardSlice) Less(i, j int) bool {
+    var ra, rb uint8
+
+    // rotation
+    ra = (cs[i] & 0xF0) >> 4 | (cs[i] & 0x0F) << 4
+    rb = (cs[j] & 0xF0) >> 4 | (cs[j] & 0x0F) << 4
+
+    return rb < ra
+}
+
+func (cs CardSlice) Sort() {
+    sort.Sort(cs)
 }
