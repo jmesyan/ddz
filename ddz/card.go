@@ -3,6 +3,7 @@ package ddz
 import (
     "strings"
     "sort"
+    "math/rand"
 )
 
 type CardSlice []uint8
@@ -71,7 +72,7 @@ func CardToStr(card uint8) string {
 }
 
 func CardSliceFromString(str string) CardSlice {
-    slice := make(CardSlice, 0);
+    slice := make(CardSlice, 0)
     var suit, rank uint8
     for _, v := range (str) {
         switch {
@@ -111,14 +112,16 @@ func CardSliceFromString(str string) CardSlice {
     return slice
 }
 
+// stringify with white space
 func (cs CardSlice) ToString() string {
     return cs.ToString2(" ")
 }
 
+// stringify with separator
 func (cs CardSlice) ToString2(sep string) string {
     cards := make([]string, 0)
-    for _, v := range(cs) {
-         cards = append(cards, CardToStr(v))
+    for _, v := range (cs) {
+        cards = append(cards, CardToStr(v))
     }
 
     if len(sep) == 0 {
@@ -128,14 +131,17 @@ func (cs CardSlice) ToString2(sep string) string {
     }
 }
 
+// sort len
 func (cs CardSlice) Len() int {
     return len(cs)
 }
 
+// sort swap
 func (cs CardSlice) Swap(i, j int) {
     cs[i], cs[j] = cs[j], cs[i]
 }
 
+// sort less
 func (cs CardSlice) Less(i, j int) bool {
     var ra, rb uint8
 
@@ -146,6 +152,194 @@ func (cs CardSlice) Less(i, j int) bool {
     return rb < ra
 }
 
-func (cs CardSlice) Sort() {
+// sort
+func (cs CardSlice) Sort() CardSlice {
     sort.Sort(cs)
+    return cs
+}
+
+func (cs CardSlice) Clone() CardSlice {
+    cpy := make(CardSlice, len(cs))
+    copy(cpy, cs)
+    return cpy
+}
+
+func (cs CardSlice) Reverse() CardSlice {
+    for i, j := 0, len(cs) - 1; i < j; i, j = i + 1, j - 1 {
+        cs[i], cs[j] = cs[j], cs[i]
+    }
+
+    return cs
+}
+
+func (cs CardSlice) Concat(s CardSlice) CardSlice {
+    return append(cs, s...)
+}
+
+func (cs CardSlice) Subtract(sub CardSlice) CardSlice {
+    if sub == nil {
+        return cs
+    }
+
+    diff := make(CardSlice, 0)
+    for i := 0; i < len(cs); i++ {
+        card := cs[i]
+        if sub.Contains(card) {
+            card = 0
+        }
+
+        if card != 0 {
+            diff = append(diff, card)
+        }
+    }
+
+    return diff
+}
+
+func (cs CardSlice) Contains(c uint8) bool {
+    for i := 0; i < len(cs); i++ {
+        if c == cs[i] {
+            return true
+        }
+    }
+
+    return false
+}
+
+func (cs CardSlice) ContainsAll(s CardSlice) bool {
+    if s == nil || len(s) == 0 {
+        return true
+    }
+
+    for i := 0; i < len(s); i++ {
+        if !cs.Contains(s[i]) {
+            return false
+        }
+    }
+
+    return true
+}
+
+func (cs CardSlice) Equals(s CardSlice) bool {
+    if s == nil || len(cs) != len(s) {
+        return false
+    }
+
+    a := cs.Sort()
+    b := s.Sort()
+
+    for i := 0; i < len(cs); i++ {
+        if a[i] != b[i] {
+            return false
+        }
+    }
+
+    return true
+}
+
+func (cs CardSlice) Push(card uint8) CardSlice {
+    return append(cs, card)
+}
+
+func (cs CardSlice) Pop() (uint8, CardSlice) {
+    return cs[len(cs) - 1], cs[:len(cs) - 1]
+}
+
+func (cs CardSlice) Shift(card uint8) (uint8, CardSlice) {
+    if len(cs) == 0 {
+        return 0, cs
+    }
+
+    return cs[0], cs[1:]
+}
+
+func (cs CardSlice) Unshift(card uint8) CardSlice {
+    return append(CardSlice{card}, cs...)
+}
+
+func (cs CardSlice) DropFront(count int) CardSlice {
+    if count >= len(cs) {
+        count = len(cs)
+    }
+    return cs[count:]
+}
+
+func (cs CardSlice) DropBack(count int) CardSlice {
+    if count >= len(cs) {
+        count = len(cs)
+    }
+    return cs[:len(cs) - count]
+}
+
+func (cs CardSlice) Insert(i int, card uint8) CardSlice {
+    if i < 0 || i >= len(cs) {
+        return cs
+    }
+
+    ret := append(cs, 0)
+    copy(ret[i + 1:], cs[i:])
+    ret[i] = card
+    return ret
+}
+
+func (cs CardSlice) Remove(i int) (uint8, CardSlice) {
+    if i < 0 || i >= len(cs) {
+        return 0, cs
+    }
+
+    card := cs[i]
+    ret := cs.Clone()
+    return card, append(ret[:i], ret[i + 1:]...)
+}
+
+func (cs CardSlice) RemoveCard(card uint8) (bool, CardSlice) {
+    for i := 0; i < len(cs); i++ {
+        if cs[i] == card {
+            _, s := cs.Remove(i)
+            return true, s
+        }
+    }
+
+    return false, cs
+}
+
+func (cs CardSlice) ExtractRank(rank uint8) CardSlice {
+    ret := make(CardSlice, 0)
+    for i := 0; i < len(cs); i++ {
+        if CardRank(cs[i]) == rank {
+            ret = append(ret, cs[i])
+        }
+    }
+
+    return ret
+}
+
+func (cs CardSlice) RemoveRank(rank uint8) CardSlice {
+    left := make(CardSlice, 0)
+    for i := 0; i < len(cs); i++ {
+        if CardRank(cs[i]) != rank {
+            left = append(left, cs[i])
+        }
+    }
+
+    return left
+}
+
+func (cs CardSlice) CountRank() []int {
+    count := make([]int, CardRankEnd)
+    for i := 0; i < len(cs); i++ {
+        count[CardRank(cs[i])]++
+    }
+
+    return count
+}
+
+func (cs CardSlice) Shuffle(seed int64) CardSlice {
+    rand.Seed(seed)
+    for i := range cs {
+        j := rand.Intn(i + 1)
+        cs[i], cs[j] = cs[j], cs[i]
+    }
+
+    return cs
 }
