@@ -54,4 +54,9 @@ const (
     HandChain = 0x80
     HandNone = 0
     HandSearchMask = 0xFF
+
+    HandCompareIllegal = -3
+    HandCompareLess = -1
+    HandCompareEqual = 0
+    HandCompareGreater = 1
 )

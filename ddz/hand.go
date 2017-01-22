@@ -1,9 +1,5 @@
 package ddz
 
-import (
-    "sort"
-)
-
 type Hand struct {
     kind  uint8
     cards CardSlice
@@ -63,12 +59,17 @@ func (h *Hand) SetKicker(kicker uint8) *Hand {
     return h
 }
 
-func (h *Hand) Chain() uint8 {
-    return HandGetChain(h.kind)
+func (h *Hand) Chain() bool {
+    return HandGetChain(h.kind) == HandChain
 }
 
-func (h *Hand) SetChain(chain uint8) *Hand {
-    HandSetMask(&h.kind, chain)
+func (h *Hand) SetChain(chain bool) *Hand {
+    if chain {
+        HandSetMask(&h.kind, HandChain)
+    } else {
+        HandSetMask(&h.kind, HandChainless)
+    }
+
     return h
 }
 
@@ -84,6 +85,10 @@ func (h *Hand) SetKind(kind uint8) *Hand {
 func (h *Hand) Format(primal, kicker, chain uint8) *Hand {
     h.kind = HandFormat(primal, kicker, chain)
     return h
+}
+
+func (h *Hand) Cards() CardSlice {
+    return h.cards
 }
 
 func (h *Hand) SetCards(cards CardSlice) *Hand {
@@ -108,14 +113,6 @@ func (h *Hand) Set(o *Hand) *Hand {
     h.kind = o.kind
     h.cards = o.cards.Clone()
     return h
-}
-
-func (h *Hand) CountRank() ([]int, []int) {
-    count := h.cards.CountRank()
-    sorted := make([]int, len(count))
-    copy(sorted, count)
-    sort.Sort(sort.Reverse(sort.IntSlice(sorted)))
-    return count, sorted
 }
 
 // private
@@ -218,7 +215,7 @@ var handPatterns = [][]int{
     {4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0}, // 20, four chain
 }
 
-var handSpecs = [][][]int{
+var handSpecs = [][][]uint8{
     {
         // place holder
         {0, 0, 0, 0}, {0, 0, 0, 0},
@@ -297,26 +294,19 @@ var handSpecs = [][][]int{
     },
 };
 
-func compareSlice(a, b []int) bool {
-    if a == nil || b == nil {
+func patternMatch(sorted []int, pattern int) bool {
+    p := handPatterns[pattern]
+    if len(sorted) < len(p) {
         return false
     }
 
-    if len(a) != len(b) {
-        return false
-    }
-
-    for i := 0; i < len(a); i++ {
-        if a[i] != b[i] {
+    for i := 0; i < len(p); i++ {
+        if sorted[i] != p[i] {
             return false
         }
     }
 
-    return true
-}
-
-func patterMatch(sorted []int, pattern int) bool {
-    return compareSlice(sorted, handPatterns[pattern])
+    return true;
 }
 
 func checkChain(count []int, duplicate, expectLen int) bool {
@@ -335,4 +325,206 @@ func checkChain(count []int, duplicate, expectLen int) bool {
         }
     }
     return length == expectLen
+}
+
+func distribute(hand *Hand, array CardSlice, count []int, d1, d2, length int) {
+    temp := make(CardSlice, 0)
+    for i := 0; i < len(array); i++ {
+        card := array[i]
+        num := count[CardRank(card)]
+        if num == d1 {
+            hand.cards = hand.cards.Push(card)
+        } else if num == d2 {
+            temp = temp.Push(card)
+        }
+
+        if len(hand.cards) + len(temp) >= length {
+            hand.cards = hand.cards.Concat(temp)
+            break
+        }
+    }
+}
+
+func checkNuke(hand *Hand, array CardSlice, count, sorted []int) bool {
+    if len(array) != 2 {
+        return false
+    }
+
+    if CardRank(array[0]) == CardRankR && CardRank(array[1]) == CardRankr {
+        hand.kind = HandFormat(HandPrimalNuke, HandKickerNone, HandChainless)
+        hand.cards = array.Clone()
+        return true
+    }
+
+    return false
+}
+
+func checkBomb(hand *Hand, array CardSlice, count, sorted []int) bool {
+    if len(array) != 4 {
+        return false
+    }
+
+    if patternMatch(sorted, handPattern_4_1) {
+        hand.cards = array.Clone()
+        hand.kind = HandFormat(HandPrimalBomb, HandKickerNone, HandChainless)
+        return true
+    }
+
+    return false
+}
+
+func Parse(array CardSlice) *Hand {
+    hand := new(Hand)
+    hand.kind = HandNone
+
+    array = array.Sort()
+    count, sorted := array.CountSortRank()
+    chainLen := [...]int{
+        0,
+        HandSoloChainMinLen,
+        HandPairChainMinLen,
+        HandTrioChainMinLen,
+        HandFourChainMinLen,
+    }
+
+    for {
+        arrayLen := len(array)
+
+        if arrayLen < HandMinLen || arrayLen > HandMaxLen {
+            break
+        }
+
+        if arrayLen == 1 {
+            hand.kind = HandFormat(HandPrimalSolo, HandKickerNone, HandChainless)
+            hand.cards = array.Clone()
+            break
+        }
+
+        if arrayLen == 2 && checkNuke(hand, array, count, sorted) {
+            break
+        }
+
+        if arrayLen == 4 && checkBomb(hand, array, count, sorted) {
+            break
+        }
+
+        for i := HandPrimalSolo; i <= HandPrimalFour; i++ {
+            chainMinLen := chainLen[i]
+            if arrayLen >= chainMinLen && arrayLen % i == 0 && checkChain(count, i, arrayLen / i) {
+                hand.kind = HandFormat(uint8(i), HandKickerNone, HandChain)
+                hand.cards = array.Clone()
+                break
+            }
+        }
+
+        if hand.kind != HandNone {
+            break
+        } else {
+            d2 := []int{0, 1, 2, 1, 2}
+            for i := 0; i < 2; i++ {
+                pattern := handSpecs[arrayLen][i][0]
+                primal := handSpecs[arrayLen][i][1]
+                kicker := handSpecs[arrayLen][i][2]
+                chain := handSpecs[arrayLen][i][3]
+
+                if pattern == 0 {
+                    hand.kind = HandNone
+                    break
+                }
+
+                if patternMatch(sorted, int(pattern)) {
+                    d1 := primal
+                    distribute(hand, array, count, int(d1), d2[kicker >> 4], arrayLen)
+                    hand.kind = HandFormat(primal, kicker, chain)
+                    break
+                }
+            }
+        }
+        break
+    }
+
+    if hand.kind == HandNone {
+        return nil
+    } else {
+        return hand
+    }
+}
+
+func compareBomb(a, b *Hand) int {
+    if a.kind == b.kind && a.cards[0] == b.cards[0] {
+        return HandCompareEqual
+    } else if b.kind == HandPrimalBomb {
+        if CardRank(a.cards[0]) > CardRank(b.cards[0]) {
+            return HandCompareGreater
+        } else {
+            return HandCompareLess
+        }
+    } else {
+        if a.Primal() > b.Primal() {
+            return HandCompareGreater
+        } else {
+            return HandCompareLess
+        }
+    }
+}
+
+func Compare(a, b *Hand) int {
+    if a.kind != b.kind {
+        if b.kind != HandPrimalNuke && b.kind != HandPrimalBomb {
+            return HandCompareIllegal
+        } else {
+            return compareBomb(a, b)
+        }
+    } else {
+        if len(a.cards) != len(b.cards) {
+            return HandCompareIllegal
+        } else {
+            if CardRank(a.cards[0]) == CardRank(b.cards[0]) {
+                return HandCompareEqual
+            } else {
+                if CardRank(a.cards[0]) > CardRank(b.cards[0]) {
+                    return HandCompareGreater
+                } else {
+                    return HandCompareLess
+                }
+            }
+        }
+    }
+}
+
+func (hand *Hand) ToString() string {
+    str := ""
+    switch hand.Primal() {
+    case HandPrimalNone:
+        str = "none"
+    case HandPrimalNuke:
+        str = "nuke"
+    case HandPrimalBomb:
+        str = "bomb"
+    case HandPrimalFour:
+        str = "four"
+    case HandPrimalTrio:
+        str = "trio"
+    case HandPrimalPair:
+        str = "pair"
+    case HandPrimalSolo:
+        str = "solo"
+    }
+
+    switch hand.Kicker() {
+    case HandKickerSolo :
+        str += " solo"
+    case HandKickerPair :
+        str += " pair"
+    case HandKickerDualSolo :
+        str += " dual solo"
+    case HandKickerDualPair :
+        str += " dual pair"
+    }
+
+    if hand.Chain() {
+        str += " chain"
+    }
+
+    return str
 }

@@ -242,6 +242,10 @@ func (cs CardSlice) Push(card uint8) CardSlice {
 }
 
 func (cs CardSlice) Pop() (uint8, CardSlice) {
+    if len(cs) == 0 {
+        return 0, cs
+    }
+
     return cs[len(cs) - 1], cs[:len(cs) - 1]
 }
 
@@ -332,6 +336,14 @@ func (cs CardSlice) CountRank() []int {
     }
 
     return count
+}
+
+func (cs CardSlice) CountSortRank() ([]int, []int) {
+    count := cs.CountRank()
+    sorted := make([]int, len(count))
+    copy(sorted, count)
+    sort.Sort(sort.Reverse(sort.IntSlice(sorted)))
+    return count, sorted
 }
 
 func (cs CardSlice) Shuffle(seed int64) CardSlice {
