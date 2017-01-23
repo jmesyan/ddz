@@ -28,6 +28,9 @@ const (
 
     CardSetLen = 54
 
+    CardBlackJoker = 0x1E
+    CardRedJoker = 0x2F
+
     // hand
     HandMinLen = 1
     HandMaxLen = 20
