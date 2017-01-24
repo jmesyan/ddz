@@ -1,3 +1,8 @@
+/*
+ * Am I writing the right go code ?
+ * should I use slice like this ?
+ * review the code when the translation from C is done
+ */
 package ddz
 
 type HandList []*Hand
@@ -443,13 +448,13 @@ func (cards CardSlice) SearchBeatList(tobeat *Hand) HandList {
 // ----------------------------------------------------------------------------
 
 var primalArray = [...]int{0, HandPrimalSolo, HandPrimalPair, HandPrimalTrio}
+var chainLength = [...]int{0, HandSoloChainMinLen, HandPairChainMinLen, HandTrioChainMinLen}
 
 // Extract hands like 34567 / 334455 / 333444555 etc
 // array is a processed card array holds count[rank] == duplicate
 func extractConsecutive(array CardSlice, duplicate int) HandList {
 	hl := HandList{}
 	hand := new(Hand)
-	chainLen := []int{0, HandSoloChainMinLen, HandPairChainMinLen, HandTrioChainMinLen}
 
 	if duplicate < 1 || duplicate > 3 || len(array) == 0 {
 		return hl
@@ -461,7 +466,7 @@ func extractConsecutive(array CardSlice, duplicate int) HandList {
 	for cardNum, steps := 0, len(array)/duplicate-1; cardNum < steps; cardNum++ {
 		if lastRank-1 != array.RankAt(i) {
 			// Chain breaks
-			if i >= chainLen[duplicate] {
+			if i >= chainLength[duplicate] {
 				// Chain
 				hand.kind = HandFormat(primalArray[duplicate], HandKickerNone, HandChain)
 				hand.cards, array = array[:i], array[i:]
@@ -491,7 +496,7 @@ func extractConsecutive(array CardSlice, duplicate int) HandList {
 	// All chained up
 	if i != 0 && i == len(array) {
 		// Can chain up
-		if i >= chainLen[duplicate] {
+		if i >= chainLength[duplicate] {
 			hand.kind = HandFormat(primalArray[duplicate], HandKickerNone, HandChain)
 			hand.cards, array = array[:i], array[i:]
 			hl = hl.Push(hand.Clone())
@@ -580,3 +585,19 @@ func (cards CardSlice) StandardAnalyze() HandList {
 
 	return hl
 }
+
+// ----------------------------------------------------------------------------
+// Hand Evaluator
+// ----------------------------------------------------------------------------
+
+// Calculate the length of hand list analyze from a card array
+// In the origin C version, the analyze function was rewrite with no memory allocation
+// But in go, we choose the easy way
+func (array CardSlice) standardEvaluator() int {
+	return len(array.StandardAnalyze())
+}
+
+// ----------------------------------------------------------------------------
+// Advanced Analyze
+// ----------------------------------------------------------------------------
+
