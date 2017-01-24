@@ -2,6 +2,10 @@ package ddz
 
 type HandList []*Hand
 
+// ----------------------------------------------------------------------------
+// HandList
+// ----------------------------------------------------------------------------
+
 func (hl HandList) Push(h *Hand) HandList {
 	return append(hl, h)
 }
@@ -45,6 +49,14 @@ func (hl HandList) FindKind(kind int) *Hand {
 	return nil
 }
 
+func (hl HandList) Concat(rhs HandList) HandList {
+	return append(hl, rhs...)
+}
+
+// ----------------------------------------------------------------------------
+// Beat search
+// ----------------------------------------------------------------------------
+
 // Beat search context
 type handContext struct {
 	count  []int     // rank count
@@ -64,11 +76,11 @@ func newHandContext(array CardSlice) *handContext {
 
 // Search beat to primal
 func (ctx *handContext) searchBeatPrimal(tobeat, beat *Hand, primal int) bool {
-	rank := CardRank(tobeat.cards[0])
+	rank := tobeat.cards.RankAt(0)
 	count := ctx.count
 	temp := ctx.rcards
 	for i := 0; i < len(temp); i++ {
-		if CardRank(temp[i]) > rank && count[CardRank(temp[i])] >= primal {
+		if temp.RankAt(i) > rank && count[temp.RankAt(i)] >= primal {
 			beat.kind = tobeat.kind
 			beat.cards = temp[i : i+primal]
 			return true
@@ -92,9 +104,9 @@ func (ctx *handContext) searchBeatBomb(tobeat, beat *Hand) bool {
 	} else {
 		// tobeat is neither a nuke nor a bomb, search a bomb to beat it
 		for i := 0; i < len(ctx.cards); i++ {
-			if ctx.count[CardRank(ctx.cards[i])] == 4 {
+			if ctx.count[ctx.cards.RankAt(i)] == 4 {
 				canbeat = true
-				beat.cards = ctx.cards.ExtractRank(CardRank(ctx.cards[i]))
+				beat.cards, _ = ctx.cards.ExtractRank(ctx.cards.RankAt(i))
 				break
 			}
 		}
@@ -138,12 +150,12 @@ func (ctx *handContext) searchBeatTrioKicker(tobeat, beat *Hand, kick int) bool 
 	if temp.ContainsAll(trioHand.cards) {
 		// Keep trio beat
 		trioBeat.cards = trioHand.cards.Clone()
-		temp = temp.RemoveRank(CardRank(trioBeat.cards[0]))
+		temp = temp.RemoveRank(trioBeat.cards.RankAt(0))
 
 		// Search for a higher rank kicker
 		// Round 1: only search for those count[rank] == kick
 		for i := 0; i < len(temp); i++ {
-			if count[CardRank(temp[i])] >= kick && CardRank(temp[i]) > CardRank(kickHand.cards[0]) {
+			if count[temp.RankAt(i)] >= kick && temp.RankAt(i) > kickHand.cards.RankAt(0) {
 				kickBeat.cards = temp.Clone()[i : i+kick]
 				canBeat = true
 				break
@@ -165,11 +177,11 @@ func (ctx *handContext) searchBeatTrioKicker(tobeat, beat *Hand, kick int) bool 
 		// Trio beat found, search for kicker beat
 		if canTrioBeat {
 			// Remove trio from temp
-			temp = temp.RemoveRank(CardRank(trioBeat.cards[0]))
+			temp = temp.RemoveRank(trioBeat.cards.RankAt(0))
 
 			// Search for a kicker
 			for i := 0; i < len(temp); i++ {
-				if count[CardRank(temp[i])] >= kick {
+				if count[temp.RankAt(i)] >= kick {
 					kickBeat.cards = kickBeat.cards.Concat(temp[i : i+kick])
 					canBeat = true
 					break
@@ -191,7 +203,7 @@ func (ctx *handContext) searchBeatChain(tobeat, beat *Hand, duplicate int) bool 
 	found := false
 	temp := CardSlice{}
 	chainLen := len(tobeat.cards) / duplicate
-	footer := CardRank(tobeat.cards[len(tobeat.cards)-1])
+	footer := tobeat.cards.RankAt(len(tobeat.cards) - 1)
 
 	// Search for beat chain in rank counts
 	for i := footer + 1; i <= CardRank2-chainLen; i++ {
@@ -209,7 +221,7 @@ func (ctx *handContext) searchBeatChain(tobeat, beat *Hand, duplicate int) bool 
 			k := duplicate // how many cards needed for each rank
 
 			for i := len(ctx.cards); i >= 0 && chainLen > 0; i-- {
-				if CardRank(ctx.cards[i]) == footer {
+				if ctx.cards.RankAt(i) == footer {
 					temp = temp.Unshift(ctx.cards[i])
 					k--
 
@@ -259,7 +271,7 @@ func (ctx *handContext) searchBeatTrioKickerChain(tobeat, beat *Hand, kc int) bo
 		copy(kickCount, ctx.count)
 
 		for i := 0; i < len(trioHand.cards); i += 3 {
-			kickCount[CardRank(trioHand.cards[i])] = 0
+			kickCount[trioHand.cards.RankAt(i)] = 0
 		}
 
 		// Remove count < kc and calculate n
@@ -296,7 +308,7 @@ func (ctx *handContext) searchBeatTrioKickerChain(tobeat, beat *Hand, kc int) bo
 
 		j = 0
 		for i := 0; i < len(kickHand.cards); i += kc {
-			comb[j] = rankComb[CardRank(kickHand.cards[i])]
+			comb[j] = rankComb[kickHand.cards.RankAt(i)]
 			j++
 		}
 
@@ -306,7 +318,7 @@ func (ctx *handContext) searchBeatTrioKickerChain(tobeat, beat *Hand, kc int) bo
 			for i := 0; i < chainLen; i++ {
 				rank := combRank[comb[i]]
 				for j = 0; j < len(temp); j++ {
-					if CardRank(temp[j]) == rank {
+					if temp.RankAt(j) == rank {
 						kickBeat.cards = kickBeat.cards.Concat(temp[j : j+kc])
 						break
 					}
@@ -330,15 +342,15 @@ func (ctx *handContext) searchBeatTrioKickerChain(tobeat, beat *Hand, kc int) bo
 		if canTrioBeat {
 			// Remove trio from temp
 			for i := 0; i < len(trioBeat.cards); i += 3 {
-				temp = temp.RemoveRank(CardRank(trioBeat.cards[i]))
-				count[CardRank(trioBeat.cards[0])] = 0
+				temp = temp.RemoveRank(trioBeat.cards.RankAt(i))
+				count[trioBeat.cards.RankAt(0)] = 0
 			}
 
 			for j := 0; j < chainLen; j++ {
 				for i := 0; i < len(temp); i++ {
-					if count[CardRank(temp[i])] >= kc {
+					if count[temp.RankAt(i)] >= kc {
 						trioBeat.cards = trioBeat.cards.Concat(temp[i : i+kc])
-						temp = temp.RemoveRank(CardRank(temp[i]))
+						temp = temp.RemoveRank(temp.RankAt(i))
 						break
 					}
 				}
@@ -359,5 +371,212 @@ func (ctx *handContext) searchBeatTrioKickerChain(tobeat, beat *Hand, kc int) bo
 }
 
 func searchBeat(cards CardSlice, tobeat, beat *Hand) bool {
-    return false
+	// Setup search context
+	canBeat := false
+	ctx := newHandContext(cards)
+
+	// Start search
+	switch tobeat.kind {
+	case HandFormat(HandPrimalSolo, HandKickerNone, HandCompareEqual):
+		canBeat = ctx.searchBeatPrimal(tobeat, beat, HandPrimalSolo)
+	case HandFormat(HandPrimalPair, HandKickerNone, HandChainless):
+		canBeat = ctx.searchBeatPrimal(tobeat, beat, HandPrimalPair)
+	case HandFormat(HandPrimalTrio, HandKickerNone, HandChainless):
+		canBeat = ctx.searchBeatPrimal(tobeat, beat, HandPrimalTrio)
+	case HandFormat(HandPrimalTrio, HandKickerPair, HandChainless):
+		canBeat = ctx.searchBeatTrioKicker(tobeat, beat, HandPrimalPair)
+	case HandFormat(HandPrimalTrio, HandKickerSolo, HandChainless):
+		canBeat = ctx.searchBeatTrioKicker(tobeat, beat, HandPrimalSolo)
+	case HandFormat(HandPrimalSolo, HandKickerNone, HandChain):
+		canBeat = ctx.searchBeatChain(tobeat, beat, HandPrimalSolo)
+	case HandFormat(HandPrimalPair, HandKickerNone, HandChain):
+		canBeat = ctx.searchBeatChain(tobeat, beat, HandPrimalPair)
+	case HandFormat(HandPrimalTrio, HandKickerNone, HandChain):
+		canBeat = ctx.searchBeatChain(tobeat, beat, HandPrimalTrio)
+	case HandFormat(HandPrimalFour, HandKickerNone, HandChain):
+		canBeat = ctx.searchBeatChain(tobeat, beat, HandPrimalFour)
+	case HandFormat(HandPrimalTrio, HandKickerPair, HandChain):
+		canBeat = ctx.searchBeatTrioKickerChain(tobeat, beat, HandPrimalPair)
+	case HandFormat(HandPrimalTrio, HandKickerSolo, HandChain):
+		canBeat = ctx.searchBeatTrioKickerChain(tobeat, beat, HandPrimalSolo)
+	}
+
+	// Final solution, search for bomb and nuke
+	if !canBeat {
+		canBeat = ctx.searchBeatBomb(tobeat, beat)
+	}
+
+	return canBeat
+}
+
+// Search for beat, result will be store in beat
+// 1, if [beat->type] != 0, then search [new beat] > [beat]
+// 2, search [beat] > [tobeat], then store in [beat]
+func (cards CardSlice) SearchBeat(tobeat, beat *Hand) bool {
+	// Already in search loop, continue
+	if beat.kind != HandNone {
+		return searchBeat(cards, beat, beat)
+	} else {
+		return searchBeat(cards, tobeat, beat)
+	}
+}
+
+func (cards CardSlice) SearchBeatList(tobeat *Hand) HandList {
+	canBeat := true
+	beat := new(Hand)
+	handToBeat := tobeat.Clone()
+	handList := HandList{}
+
+	for canBeat {
+		canBeat = searchBeat(cards, handToBeat, beat)
+		if canBeat {
+			handToBeat = beat.Clone()
+			handList = handList.Push(beat.Clone())
+		}
+	}
+
+	return handList
+}
+
+// ----------------------------------------------------------------------------
+// Hand analyzer
+// ----------------------------------------------------------------------------
+
+var primalArray = [...]int{0, HandPrimalSolo, HandPrimalPair, HandPrimalTrio}
+
+// Extract hands like 34567 / 334455 / 333444555 etc
+// array is a processed card array holds count[rank] == duplicate
+func extractConsecutive(array CardSlice, duplicate int) HandList {
+	hl := HandList{}
+	hand := new(Hand)
+	chainLen := []int{0, HandSoloChainMinLen, HandPairChainMinLen, HandTrioChainMinLen}
+
+	if duplicate < 1 || duplicate > 3 || len(array) == 0 {
+		return hl
+	}
+
+	lastRank := array.RankAt(0)
+	i := duplicate
+
+	for cardNum, steps := 0, len(array)/duplicate-1; cardNum < steps; cardNum++ {
+		if lastRank-1 != array.RankAt(i) {
+			// Chain breaks
+			if i >= chainLen[duplicate] {
+				// Chain
+				hand.kind = HandFormat(primalArray[duplicate], HandKickerNone, HandChain)
+				hand.cards, array = array[:i], array[i:]
+				hl = hl.Push(hand.Clone())
+			} else {
+				// Not a chain
+				for j := 0; j < i/duplicate; j++ {
+					hand.kind = HandFormat(primalArray[duplicate], HandKickerNone, HandChainless)
+					hand.cards, array = array[:duplicate], array[duplicate:]
+					hl = hl.Push(hand.Clone())
+				}
+			}
+
+			if len(array) == 0 {
+				break
+			}
+
+			lastRank = array.RankAt(0)
+			i = duplicate
+		} else {
+			// Chain intact
+			lastRank = array.RankAt(i)
+			i += duplicate
+		}
+	}
+
+	// All chained up
+	if i != 0 && i == len(array) {
+		// Can chain up
+		if i >= chainLen[duplicate] {
+			hand.kind = HandFormat(primalArray[duplicate], HandKickerNone, HandChain)
+			hand.cards, array = array[:i], array[i:]
+			hl = hl.Push(hand.Clone())
+		} else {
+			for j := 0; j < i/duplicate; j++ {
+				hand.kind = HandFormat(primalArray[duplicate], HandKickerNone, HandChainless)
+				hand.cards, array = array[:duplicate], array[duplicate:]
+				hl = hl.Push(hand.Clone())
+			}
+		}
+	}
+
+	return hl
+}
+
+// Extract nuke/bomb/2 from array, these cards will be remove from array
+func extractNukeBome2(hl HandList, array CardSlice, count []int) (HandList, CardSlice, []int) {
+	hand := new(Hand)
+	// Nuke
+	if count[CardRankr] != 0 && count[CardRankR] != 0 {
+		hand.kind = HandFormat(HandPrimalNuke, HandKickerNone, HandChainless)
+		hand.cards = CardSlice{CardRedJoker, CardBlackJoker}
+		count[CardRankr], count[CardRankR] = 0, 0
+		array = array.RemoveRank(CardRankr).RemoveRank(CardRankR)
+		hl = hl.Push(hand.Clone())
+	}
+
+	// Bomb
+	for i := CardRank2; i >= CardRank3; i-- {
+		if count[i] == 4 {
+			hand.kind = HandFormat(HandPrimalBomb, HandKickerNone, HandChainless)
+			hand.cards, array = array.ExtractRank(i)
+			count[i] = 0
+			hl = hl.Push(hand.Clone())
+		}
+	}
+
+	// Joker
+	if count[CardRankr] != 0 || count[CardRankR] != 0 {
+		if count[CardRankr] != 0 {
+			hand.cards = CardSlice{CardBlackJoker}
+			array = array.RemoveRank(CardRankr)
+			count[CardRankr] = 0
+		} else {
+			hand.cards = CardSlice{CardRedJoker}
+			array = array.RemoveRank(CardRankR)
+			count[CardRankR] = 0
+		}
+		hand.kind = HandFormat(HandPrimalSolo, HandKickerNone, HandChainless)
+		hl = hl.Push(hand.Clone())
+	}
+
+	// 2
+	if count[CardRank2] != 0 {
+		hand.kind = HandFormat(primalArray[count[CardRank2]], HandKickerNone, HandChainless)
+		hand.cards, array = array.ExtractRank(CardRank2)
+		count[CardRank2] = 0
+
+		hl = hl.Push(hand.Clone())
+	}
+
+	return hl, array, count
+}
+
+func (cards CardSlice) StandardAnalyze() HandList {
+	chainArrays := []CardSlice{{}, {}, {}}
+	array := cards.Clone().Sort()
+	count := array.CountRank()
+	hl := HandList{}
+	// Nuke, bombs and 2
+	hl, array, count = extractNukeBome2(hl, array, count)
+	// Chains
+	for i := 0; i < len(array); {
+		c := count[array.RankAt(i)]
+		if c != 0 {
+			chainArrays[c-1] = chainArrays[c-1].Concat(array[i : i+c])
+			i += c
+		} else {
+			i++
+		}
+	}
+
+	for i := 3; i > 0; i-- {
+		hl = hl.Concat(extractConsecutive(chainArrays[i-1], i))
+	}
+
+	return hl
 }

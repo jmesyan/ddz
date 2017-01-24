@@ -307,15 +307,18 @@ func (cs CardSlice) RemoveCard(card int) (bool, CardSlice) {
 	return false, cs
 }
 
-func (cs CardSlice) ExtractRank(rank int) CardSlice {
-	ret := make(CardSlice, 0)
+func (cs CardSlice) ExtractRank(rank int) (extract, leftOver CardSlice) {
+	extract = make(CardSlice, 0)
+    leftOver = make(CardSlice, 0)
 	for i := 0; i < len(cs); i++ {
 		if CardRank(cs[i]) == rank {
-			ret = append(ret, cs[i])
-		}
+			extract = append(extract, cs[i])
+		} else {
+            leftOver = append(leftOver, cs[i])
+        }
 	}
 
-	return ret
+	return
 }
 
 func (cs CardSlice) RemoveRank(rank int) CardSlice {
@@ -327,6 +330,14 @@ func (cs CardSlice) RemoveRank(rank int) CardSlice {
 	}
 
 	return left
+}
+
+func (cs CardSlice) RankAt(pos int) int {
+    if pos < 0 || pos > len(cs) {
+        return 0
+    }
+
+    return CardRank(cs[pos])
 }
 
 func (cs CardSlice) CountRank() []int {

@@ -526,5 +526,7 @@ func (hand *Hand) ToString() string {
 		str += " chain"
 	}
 
+    str += "\t" + hand.cards.ToString()
+
 	return str
 }
