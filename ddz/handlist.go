@@ -601,3 +601,163 @@ func (array CardSlice) standardEvaluator() int {
 // Advanced Analyze
 // ----------------------------------------------------------------------------
 
+func (ctx *handContext) searchLongestConsecutive(duplicate int) Hand {
+	hand := new(Hand)
+	cards := ctx.rcards
+	count := ctx.count
+
+	// Early break
+	if duplicate < 1 || duplicate > 3 || len(cards) < chainLength[duplicate] {
+		return hand
+	}
+
+	// Setup
+	rankChain := []int{}
+	rankStart := 0
+
+	// i <= CARD_RANK_2
+	// but count[CARD_RANK_2] must be 0
+	// for 2/bomb/nuke has been removed before calling this function
+	for i := CardRank3; i < CardRank2; i++ {
+		// Find start of a possible chain
+		if rankStart == 0 && count[i] >= duplicate {
+			rankStart = i
+			continue
+		}
+
+		if count[i] < duplicate {
+			// Chain break, extract chain and set a new possible start
+			if ((i-rankStart)*duplicate >= chainLength[duplicate]) && (i-rankStart) > len(rankChain) {
+				// Valid chain, store rank in card slice
+				for j := rankStart; j < i; j++ {
+					rankChain = append(rankChain, j)
+				}
+			}
+
+			rankStart = 0
+		}
+	}
+
+	// Convert rank chain to card slice
+	if len(rankChain) > 0 {
+		for i := len(rankChain) - 1; i >= 0; i-- {
+			lastRank := rankChain[i]
+			k := duplicate
+
+			for j := 0; j < len(rankChain); j++ {
+				if cards.RankAt(j) == lastRank {
+					hand.cards = hand.cards.Push(cards[j])
+					k--
+
+					if k == 0 {
+						break
+					}
+				}
+			}
+		}
+
+		hand.kind = HandFormat(primalArray[duplicate], HandKickerNone, HandChain)
+	}
+
+	return hand
+}
+
+func (ctx *handContext) searchPrimal(primal int) Hand {
+	hand := new(Hand)
+	count := ctx.count
+	rcards := ctx.rcards
+
+	if primal < 1 || primal > 3 {
+		return hand
+	}
+
+	// Search count[rank] >= primal
+	for i := 0; i < len(rcards); i++ {
+		if count[rcards.RankAt(i)] >= primal {
+			// Found
+			hand.kind = HandFormat(primalArray[primal], HandKickerNone, HandChain)
+			hand.cards = rcards.Clone()[i : i+primal]
+			break
+		}
+	}
+
+	return hand
+}
+
+const (
+	handSearchTypes = 3
+)
+
+// Pass a empty hand to start traverse
+func (ctx *handContext) traverseChains(begin int, hand *Hand) (bool, int) {
+	if len(ctx.cards) == 0 || begin >= handSearchTypes {
+		return false, 0
+	}
+
+	found := false
+
+	// Initialize search
+	if hand.kind == HandNone {
+		i := begin
+		for i < handSearchTypes && hand.kind == 0 {
+			tmp := ctx.searchLongestConsecutive(primalArray[i])
+			hand.Set(tmp)
+
+			if hand.kind != HandNone {
+				found = true
+				break
+			} else {
+				i++
+				begin = i
+			}
+		}
+		// If found == false, should PANIC
+	} else {
+		// Continue search via beat
+		found = ctx.cards.SearchBeat(hand, hand)
+	}
+
+	return found, begin
+}
+
+// Extract all chains or primal hands in hand context
+func (ctx *handContext) extractAllChains() HandList {
+	handList := HandList{}
+
+	workingHand := new(Hand)
+	lastHand := new(Hand)
+	lastSearch := 0
+
+	found, lastSearch := ctx.traverseChains(lastSearch, lastHand)
+	for found {
+		handList.Unshift(lastHand.Clone())
+		workingHand.Set(lastHand)
+		for {
+			found, lastSearch = ctx.traverseChains(lastSearch, workingHand)
+			if found {
+				handList.Push(workingHand.Clone())
+			} else {
+				break
+			}
+		}
+
+		// Can't find any more hands, try to reduce chain length
+		if lastHand.kind != HandNone {
+			primal := lastHand.Primal()
+			if len(lastHand.cards) > chainLength[primal] {
+				lastHand.cards = lastHand.cards[1:]
+				found = true
+			} else {
+				lastHand.kind = HandNone
+			}
+
+			// Still can't found, loop through hand types for more
+			if !found {
+				lastSearch++
+				lastHand.Clear()
+				found, lastSearch = ctx.traverseChains(lastSearch, lastHand)
+			}
+		}
+	}
+	return handList
+}
