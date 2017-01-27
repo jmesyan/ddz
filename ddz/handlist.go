@@ -79,6 +79,15 @@ func newHandContext(array CardSlice) *handContext {
 	return ctx
 }
 
+func (ctx *handContext) clone() *handContext {
+	newContext := new(handContext)
+	newContext.count = make([]int, len(ctx.count))
+	copy(newContext.count, ctx.count)
+	newContext.cards = ctx.cards.Clone()
+	newContext.rcards = ctx.rcards.Clone()
+	return newContext
+}
+
 // Search beat to primal
 func (ctx *handContext) searchBeatPrimal(tobeat, beat *Hand, primal int) bool {
 	rank := tobeat.cards.RankAt(0)
@@ -601,7 +610,7 @@ func (array CardSlice) standardEvaluator() int {
 // Advanced Analyze
 // ----------------------------------------------------------------------------
 
-func (ctx *handContext) searchLongestConsecutive(duplicate int) Hand {
+func (ctx *handContext) searchLongestConsecutive(duplicate int) *Hand {
 	hand := new(Hand)
 	cards := ctx.rcards
 	count := ctx.count
@@ -662,7 +671,7 @@ func (ctx *handContext) searchLongestConsecutive(duplicate int) Hand {
 	return hand
 }
 
-func (ctx *handContext) searchPrimal(primal int) Hand {
+func (ctx *handContext) searchPrimal(primal int) *Hand {
 	hand := new(Hand)
 	count := ctx.count
 	rcards := ctx.rcards
@@ -760,4 +769,158 @@ func (ctx *handContext) extractAllChains() HandList {
 		}
 	}
 	return handList
+}
+
+type searchPayload struct {
+	context *handContext
+	hand    *Hand
+	weight  int
+}
+
+// Advance search tree
+type searchTree struct {
+	payload *searchPayload
+
+	child   *searchTree
+	sibling *searchTree
+	parent  *searchTree
+}
+
+func newSearchPayload(context *handContext, hand *Hand, weight int) *searchPayload {
+	payload := new(searchPayload)
+	payload.context = context
+	payload.hand = hand
+	payload.weight = weight
+	return payload
+}
+
+func newSearchTree(payload *searchPayload) *searchTree {
+	tree := new(searchTree)
+	tree.payload = payload
+	return tree
+}
+
+func (tree *searchTree) addChild(newNode *searchTree) *searchTree {
+	newNode.sibling = tree.sibling
+	tree.sibling = newNode
+	newNode.parent = tree.parent
+	return newNode
+}
+
+func (tree *searchTree) dumpLeaf() []*searchTree {
+	leaf := make([]*searchTree, 0)
+	stack := make([]*searchTree, 0)
+	stack = append(stack, tree)
+
+	for len(stack) > 0 {
+		node, stack := stack[len(stack)-1], stack[:len(stack)-1]
+		temp := node.child
+
+		for temp != nil {
+			stack = append(stack, temp)
+			temp = temp.sibling
+		}
+
+		if node.child == nil {
+			leaf = append(leaf, node)
+		}
+	}
+
+	return leaf
+}
+
+func (tree *searchTree) addHand(hand *Hand) *searchTree {
+	oldPayload := tree.payload
+	newPayload := new(searchPayload)
+
+	// Make diff
+	newPayload.context = oldPayload.context.clone()
+	newPayload.hand = hand.Clone()
+	newPayload.context.cards = newPayload.context.cards.Subtract(hand.cards)
+	newPayload.context.rcards = newPayload.context.cards.Clone().Reverse()
+	newPayload.context.count = newPayload.context.cards.CountRank()
+	newPayload.weight = oldPayload.weight + 1
+
+	// Tree expansion
+	return tree.addChild(newSearchTree(newPayload))
+}
+
+// Search hand via shortest hand list
+func (array CardSlice) AdvanceAnalyze() HandList {
+    var shortest *searchTree = nil
+
+	handList := make(HandList, 0)
+
+	// Setup search context
+	ctx := newHandContext(array)
+	// Extract bombs and 2
+	handList, ctx.cards, ctx.count = extractNukeBome2(handList, ctx.cards, ctx.count)
+	// Finish building beat search context
+	ctx.rcards = ctx.cards.Clone().Reverse()
+
+	// Magic goes here
+
+	// Root
+	payload := newSearchPayload(ctx, nil, 0)
+	grandTree := newSearchTree(payload)
+
+	// First expansion
+	chains := ctx.extractAllChains()
+
+	// No chains, fallback to standard analyze
+	if len(chains) == 0 {
+		return array.StandardAnalyze()
+	}
+
+	// Got chains, make first expand
+	stack := make([]*searchTree, 0)
+	for i := 0; i < len(chains); i++ {
+		treeNode := grandTree.addHand(chains[i])
+		stack = append(stack, treeNode)
+	}
+
+	// Loop start
+	for len(stack) != 0 {
+		// Pop stack
+		workingTree := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+		// Expansion
+		chains = workingTree.payload.context.extractAllChains()
+		if len(chains) != 0 {
+			// Push new nodes
+			for i := 0; i < len(chains); i++ {
+				treeNode := workingTree.addHand(chains[i])
+				stack = append(stack, treeNode)
+			}
+		}
+	}
+
+	// Tree construction complete
+	leaves := grandTree.dumpLeaf()
+
+	// Find shortest path
+	for len(leaves) != 0 {
+		// Pop stack
+		workingTree := leaves[len(leaves)-1]
+		leaves = leaves[:len(leaves)-1]
+        payload = workingTree.payload
+        // Calculate other hands weight
+        payload.weight += payload.context.cards.standardEvaluator()
+
+        if shortest == nil || payload.weight < shortest.payload.weight {
+            shortest = workingTree
+        }
+	}
+
+    // Extract shortest  node's other hands
+    others := shortest.payload.context.cards.StandardAnalyze()
+
+    for shortest != nil && shortest.payload.weight != 0 {
+        others = others.Unshift(shortest.payload.hand.Clone())
+        shortest = shortest.parent
+    }
+
+    others = others.Concat(handList)
+
+	return others
 }
