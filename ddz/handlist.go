@@ -5,6 +5,11 @@
  */
 package ddz
 
+import (
+    "fmt"
+    "sort"
+)
+
 type HandList []*Hand
 
 // ----------------------------------------------------------------------------
@@ -221,7 +226,7 @@ func (ctx *handContext) searchBeatChain(tobeat, beat *Hand, duplicate int) bool 
 
 	// Search for beat chain in rank counts
 	for i := footer + 1; i <= CardRank2-chainLen; i++ {
-		found := true
+		found = true
 		for j := 0; j < chainLen; j++ {
 			// Check if chain breaks
 			if ctx.count[i+j] < duplicate {
@@ -234,7 +239,7 @@ func (ctx *handContext) searchBeatChain(tobeat, beat *Hand, duplicate int) bool 
 			footer = i     // beat footer rank
 			k := duplicate // how many cards needed for each rank
 
-			for i := len(ctx.cards); i >= 0 && chainLen > 0; i-- {
+			for i := len(ctx.cards) - 1; i >= 0 && chainLen > 0; i-- {
 				if ctx.cards.RankAt(i) == footer {
 					temp = temp.Unshift(ctx.cards[i])
 					k--
@@ -391,7 +396,7 @@ func searchBeat(cards CardSlice, tobeat, beat *Hand) bool {
 
 	// Start search
 	switch tobeat.kind {
-	case HandFormat(HandPrimalSolo, HandKickerNone, HandCompareEqual):
+	case HandFormat(HandPrimalSolo, HandKickerNone, HandChainless):
 		canBeat = ctx.searchBeatPrimal(tobeat, beat, HandPrimalSolo)
 	case HandFormat(HandPrimalPair, HandKickerNone, HandChainless):
 		canBeat = ctx.searchBeatPrimal(tobeat, beat, HandPrimalPair)
@@ -606,6 +611,10 @@ func (array CardSlice) standardEvaluator() int {
 	return len(array.StandardAnalyze())
 }
 
+func (array CardSlice) advancedEvaluator() int {
+	return len(array.AdvanceAnalyze())
+}
+
 // ----------------------------------------------------------------------------
 // Advanced Analyze
 // ----------------------------------------------------------------------------
@@ -627,10 +636,12 @@ func (ctx *handContext) searchLongestConsecutive(duplicate int) *Hand {
 	// i <= CARD_RANK_2
 	// but count[CARD_RANK_2] must be 0
 	// for 2/bomb/nuke has been removed before calling this function
-	for i := CardRank3; i < CardRank2; i++ {
+	for i := CardRank3; i <= CardRank2; i++ {
 		// Find start of a possible chain
-		if rankStart == 0 && count[i] >= duplicate {
-			rankStart = i
+		if rankStart == 0 {
+			if count[i] >= duplicate {
+				rankStart = i
+			}
 			continue
 		}
 
@@ -653,7 +664,7 @@ func (ctx *handContext) searchLongestConsecutive(duplicate int) *Hand {
 			lastRank := rankChain[i]
 			k := duplicate
 
-			for j := 0; j < len(rankChain); j++ {
+			for j := 0; j < len(cards); j++ {
 				if cards.RankAt(j) == lastRank {
 					hand.cards = hand.cards.Push(cards[j])
 					k--
@@ -698,18 +709,19 @@ const (
 )
 
 // Pass a empty hand to start traverse
-func (ctx *handContext) traverseChains(begin int, hand *Hand) (bool, int) {
-	if len(ctx.cards) == 0 || begin >= handSearchTypes {
-		return false, 0
+func (ctx *handContext) traverseChains(begin *int, hand *Hand) bool {
+	if len(ctx.cards) == 0 || *begin >= handSearchTypes {
+		return false
 	}
 
+	primals := []int{1, 2, 3}
 	found := false
 
 	// Initialize search
 	if hand.kind == HandNone {
-		i := begin
-		for i < handSearchTypes && hand.kind == 0 {
-			tmp := ctx.searchLongestConsecutive(primalArray[i])
+		i := *begin
+		for i < handSearchTypes && hand.kind == HandNone {
+			tmp := ctx.searchLongestConsecutive(primals[i])
 			hand.Set(tmp)
 
 			if hand.kind != HandNone {
@@ -717,7 +729,7 @@ func (ctx *handContext) traverseChains(begin int, hand *Hand) (bool, int) {
 				break
 			} else {
 				i++
-				begin = i
+				*begin = i
 			}
 		}
 		// If found == false, should PANIC
@@ -726,25 +738,26 @@ func (ctx *handContext) traverseChains(begin int, hand *Hand) (bool, int) {
 		found = ctx.cards.SearchBeat(hand, hand)
 	}
 
-	return found, begin
+	return found
 }
 
 // Extract all chains or primal hands in hand context
 func (ctx *handContext) extractAllChains() HandList {
 	handList := HandList{}
 
+	var found bool = false
+	var lastSearch int = 0
 	workingHand := new(Hand)
 	lastHand := new(Hand)
-	lastSearch := 0
 
-	found, lastSearch := ctx.traverseChains(lastSearch, lastHand)
+	found = ctx.traverseChains(&lastSearch, lastHand)
 	for found {
-		handList.Unshift(lastHand.Clone())
+		handList = handList.Unshift(lastHand.Clone())
 		workingHand.Set(lastHand)
 		for {
-			found, lastSearch = ctx.traverseChains(lastSearch, workingHand)
+			found = ctx.traverseChains(&lastSearch, workingHand)
 			if found {
-				handList.Push(workingHand.Clone())
+				handList = handList.Push(workingHand.Clone())
 			} else {
 				break
 			}
@@ -754,7 +767,7 @@ func (ctx *handContext) extractAllChains() HandList {
 		if lastHand.kind != HandNone {
 			primal := lastHand.Primal()
 			if len(lastHand.cards) > chainLength[primal] {
-				lastHand.cards = lastHand.cards[1:]
+				lastHand.cards = lastHand.cards[primal:]
 				found = true
 			} else {
 				lastHand.kind = HandNone
@@ -764,7 +777,7 @@ func (ctx *handContext) extractAllChains() HandList {
 			if !found {
 				lastSearch++
 				lastHand.Clear()
-				found, lastSearch = ctx.traverseChains(lastSearch, lastHand)
+				found = ctx.traverseChains(&lastSearch, lastHand)
 			}
 		}
 	}
@@ -797,23 +810,28 @@ func newSearchPayload(context *handContext, hand *Hand, weight int) *searchPaylo
 func newSearchTree(payload *searchPayload) *searchTree {
 	tree := new(searchTree)
 	tree.payload = payload
+	tree.child = nil
+	tree.parent = nil
+	tree.sibling = nil
 	return tree
 }
 
 func (tree *searchTree) addChild(newNode *searchTree) *searchTree {
-	newNode.sibling = tree.sibling
-	tree.sibling = newNode
-	newNode.parent = tree.parent
+	if tree.child != nil {
+		newNode.sibling = tree.child
+	}
+	tree.child = newNode
+	newNode.parent = tree
 	return newNode
 }
 
 func (tree *searchTree) dumpLeaf() []*searchTree {
 	leaf := make([]*searchTree, 0)
-	stack := make([]*searchTree, 0)
-	stack = append(stack, tree)
+	stack := []*searchTree{tree}
+	var node *searchTree = nil
 
 	for len(stack) > 0 {
-		node, stack := stack[len(stack)-1], stack[:len(stack)-1]
+		node, stack = stack[len(stack)-1], stack[:len(stack)-1]
 		temp := node.child
 
 		for temp != nil {
@@ -847,7 +865,7 @@ func (tree *searchTree) addHand(hand *Hand) *searchTree {
 
 // Search hand via shortest hand list
 func (array CardSlice) AdvanceAnalyze() HandList {
-    var shortest *searchTree = nil
+	var shortest *searchTree = nil
 
 	handList := make(HandList, 0)
 
@@ -863,9 +881,12 @@ func (array CardSlice) AdvanceAnalyze() HandList {
 	// Root
 	payload := newSearchPayload(ctx, nil, 0)
 	grandTree := newSearchTree(payload)
+	var workingTree *searchTree = nil
 
 	// First expansion
 	chains := ctx.extractAllChains()
+
+	chains.Print()
 
 	// No chains, fallback to standard analyze
 	if len(chains) == 0 {
@@ -882,8 +903,7 @@ func (array CardSlice) AdvanceAnalyze() HandList {
 	// Loop start
 	for len(stack) != 0 {
 		// Pop stack
-		workingTree := stack[len(stack)-1]
-		stack = stack[:len(stack)-1]
+		workingTree, stack = stack[len(stack)-1], stack[:len(stack)-1]
 		// Expansion
 		chains = workingTree.payload.context.extractAllChains()
 		if len(chains) != 0 {
@@ -901,26 +921,133 @@ func (array CardSlice) AdvanceAnalyze() HandList {
 	// Find shortest path
 	for len(leaves) != 0 {
 		// Pop stack
-		workingTree := leaves[len(leaves)-1]
+		workingTree = leaves[len(leaves)-1]
 		leaves = leaves[:len(leaves)-1]
-        payload = workingTree.payload
-        // Calculate other hands weight
-        payload.weight += payload.context.cards.standardEvaluator()
+		payload = workingTree.payload
+		// Calculate other hands weight
+		payload.weight += payload.context.cards.standardEvaluator()
 
-        if shortest == nil || payload.weight < shortest.payload.weight {
-            shortest = workingTree
+		if shortest == nil || payload.weight < shortest.payload.weight {
+			shortest = workingTree
+		}
+	}
+
+	// Extract shortest  node's other hands
+	others := shortest.payload.context.cards.StandardAnalyze()
+
+	for shortest != nil && shortest.payload.weight != 0 {
+		others = others.Unshift(shortest.payload.hand.Clone())
+		shortest = shortest.parent
+	}
+
+	others = others.Concat(handList)
+
+	return others
+}
+
+// ----------------------------------------------------------------------------
+// Best beat
+// ----------------------------------------------------------------------------
+
+const (
+	beatValueFactor = 10
+)
+
+// Nodes for beat list sort
+type beatNode struct {
+	hand  *Hand
+	value int
+}
+
+func (slice []beatNode) Len() int {
+    return len(slice)
+}
+
+func (slice []beatNode) Less(i, j int) bool {
+    return slice[i].value > slice[j].value
+}
+
+func (slice []beatNode) Swap(i, j int) {
+    slice[i], slice[j] = slice[j], slice[i]
+}
+
+// Evaluation function
+type EvaluationFunc func(array CardSlice) int
+
+func standardEvaluator(array CardSlice) int {
+	return array.standardEvaluator()
+}
+func advancedEvaluator(array CardSlice) int {
+	return array.advancedEvaluator()
+}
+
+func (array CardSlice) BestBeatStandard(tobeat, beat *Hand) bool {
+	return array.BestBeatCustom(tobeat, beat, standardEvaluator)
+}
+
+func (array CardSlice) BestBeatAdvanced(tobeat, beat *Hand) bool {
+	return array.BestBeatCustom(tobeat, beat, advancedEvaluator)
+}
+
+func (array CardSlice) BestBeatCustom(tobeat, beat *Hand, evaluator EvaluationFunc) bool {
+	if evaluator == nil {
+		evaluator = standardEvaluator
+	}
+
+    bombs := HandList{}
+    nodes := make([]beatNode, 0)
+
+	// Search beat list
+	handList := array.SearchBeatList(tobeat)
+	// Separate bomb/nuke and normal hands
+	for i := 0; i < len(handList); i++ {
+        if handList[i].kind == HandFormat(HandPrimalBomb, HandKickerNone, HandChainless) ||
+            handList[i].kind == HandFormat(HandPrimalNuke, HandKickerNone, HandChainless){
+            bombs = append(bombs, handList[i])
+        } else {
+            bnode := new(beatNode)
+            bnode.hand = handList[i]
+            nodes = append(nodes, bnode)
         }
 	}
 
-    // Extract shortest  node's other hands
-    others := shortest.payload.context.cards.StandardAnalyze()
+    // Calculate value
+    if len(nodes) > 1 {
+        for i:=0;i < len(nodes); i++ {
+            temp := array.Clone()
+            // Evaluate the value of cards after hand was played
+            leftOver := nodes[i].hand
+            temp = temp.Subtract(leftOver.cards)
+            nodes[i].value = evaluator(temp) * beatValueFactor + leftOver.cards.RankAt(0)
+        }
 
-    for shortest != nil && shortest.payload.weight != 0 {
-        others = others.Unshift(shortest.payload.hand.Clone())
-        shortest = shortest.parent
+        // Sort primal hands
+        sort.Sort(nodes)
     }
 
-    others = others.Concat(handList)
+    // Rebuild hand list
+    for i := len(bombs) - 1; i >= 0; i-- {
+        handList = handList.Unshift(bombs[i])
+    }
 
-	return others
+    for i := len(nodes) -1; i >= 0; i-- {
+        handList = handList.Unshift(nodes[i].hand)
+    }
+
+    // Select beat
+    if len(handList) != 0 {
+        beat.Set(handList[0])
+        return true
+    }
+
+	return false
+}
+
+func (hl HandList) Print() {
+	fmt.Println("-----HandList begin---------")
+	for i := 0; i < len(hl); i++ {
+		h := hl[i]
+		fmt.Println(h.ToString())
+	}
+	fmt.Println("-----HandList end---------")
 }
