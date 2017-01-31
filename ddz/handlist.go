@@ -8,6 +8,7 @@ package ddz
 import (
     "fmt"
     "sort"
+    log "github.com/Sirupsen/logrus"
 )
 
 type HandList []*Hand
@@ -733,6 +734,7 @@ func (ctx *handContext) traverseChains(begin *int, hand *Hand) bool {
 			}
 		}
 		// If found == false, should PANIC
+        log.Panic("traverseChains found nothing.")
 	} else {
 		// Continue search via beat
 		found = ctx.cards.SearchBeat(hand, hand)

@@ -1,0 +1,17 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "dGXnnR7ZhsrZNnEqFimk6q7YCqs=",
+			"path": "github.com/Sirupsen/logrus",
+			"revision": "61e43dc76f7ee59a82bdf3d71033dc12bea4c77d",
+			"revisionTime": "2017-01-13T01:19:11Z"
+		},
+		{
+			"path": "golang.org/x/sys/unix",
+			"revision": ""
+		}
+	],
+	"rootPath": "github.com/master-g/golandlord/ddz"
+}
