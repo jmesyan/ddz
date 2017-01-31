@@ -959,15 +959,17 @@ type beatNode struct {
 	value int
 }
 
-func (slice []beatNode) Len() int {
+type beatList []*beatNode
+
+func (slice beatList) Len() int {
     return len(slice)
 }
 
-func (slice []beatNode) Less(i, j int) bool {
+func (slice beatList) Less(i, j int) bool {
     return slice[i].value > slice[j].value
 }
 
-func (slice []beatNode) Swap(i, j int) {
+func (slice beatList) Swap(i, j int) {
     slice[i], slice[j] = slice[j], slice[i]
 }
 
@@ -995,7 +997,7 @@ func (array CardSlice) BestBeatCustom(tobeat, beat *Hand, evaluator EvaluationFu
 	}
 
     bombs := HandList{}
-    nodes := make([]beatNode, 0)
+    nodes := make(beatList, 0)
 
 	// Search beat list
 	handList := array.SearchBeatList(tobeat)
