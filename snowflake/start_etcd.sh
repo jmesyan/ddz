@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-docker run -d -p 2379:2379 -p 2380:2380 --name etcd quay.io/coreos/etcd \
+docker run -d --net=host -p 2379:2379 -p 2380:2380 --name etcd quay.io/coreos/etcd \
     /usr/local/bin/etcd \
     --data-dir=data.etcd --name etcd0 \
     --initial-advertise-peer-urls http://127.0.0.1:2380 --listen-peer-urls http://127.0.0.1:2380 \

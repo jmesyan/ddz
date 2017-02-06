@@ -9,7 +9,7 @@ import (
 
 const (
 	address  = "localhost:40001"
-	test_key = "test_key"
+	test_key = "/test_key"
 )
 
 func TestCasDelay(t *testing.T) {
