@@ -1,25 +1,25 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"math/rand"
 	"os"
 	"strconv"
-	"errors"
-    "time"
-    "math/rand"
+	"time"
 
-    "golang.org/x/net/context"
-    etcd "github.com/coreos/etcd/client"
 	log "github.com/Sirupsen/logrus"
+	etcd "github.com/coreos/etcd/client"
 	"github.com/master-g/golandlord/snowflake/etcdclient"
 	pb "github.com/master-g/golandlord/snowflake/proto"
+	"golang.org/x/net/context"
 )
 
 const (
 	SERVICE        = "[SNOWFLAKE]"
 	ENV_MACHINE_ID = "MACHINE_ID" // Specific machine id
 	PATH           = "/seqs"
-	UUID_KEY       = "seqs/snowflake-uuid"
+	UUID_KEY       = "/seqs/snowflake-uuid"
 	BACKOFF        = 100  // Max backoff delay millisecond
 	CONCURRENT     = 128  // Max concurrent connections to etcd
 	UUID_QUEUE     = 1024 // UUID process queue
@@ -171,20 +171,20 @@ func (s *server) uuid_task() {
 
 // wait_ms will spin wait till next millisecond.
 func (s *server) wait_ms(last_ts int64) int64 {
-    t := ts()
-    for t <= last_ts {
-        t = ts()
-    }
-    return t
+	t := ts()
+	for t <= last_ts {
+		t = ts()
+	}
+	return t
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // random delay
 func cas_delay() {
-    <-time.After(time.Duration(rand.Int63n(BACKOFF)) * time.Millisecond)
+	<-time.After(time.Duration(rand.Int63n(BACKOFF)) * time.Millisecond)
 }
 
 // get timestamp
 func ts() int64 {
-    return time.Now().UnixNano() / int64(time.Millisecond)
+	return time.Now().UnixNano() / int64(time.Millisecond)
 }
