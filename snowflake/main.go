@@ -3,6 +3,7 @@ package main
 import (
     "net"
     log "github.com/Sirupsen/logrus"
+    pb "github.com/master-g/golandlord/snowflake/proto"
     "os"
     "google.golang.org/grpc"
 )
@@ -23,4 +24,9 @@ func main() {
     // register service
     s := grpc.NewServer()
     instance := &server{}
+    instance.init()
+    pb.RegisterSnowflakeServiceServer(s, instance)
+
+    // Start service
+    s.Serve(listen)
 }
