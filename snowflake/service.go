@@ -83,7 +83,7 @@ func (s *server) init_machine_id() {
 		prevIndex := resp.Node.ModifiedIndex
 
 		// CompareAndSwap
-		resp, err = client.Set(context.Background(), UUID_KEY, fmt.Sprintf(prevValue+1), &etcd.SetOptions{PrevIndex: prevIndex})
+		resp, err = client.Set(context.Background(), UUID_KEY, fmt.Sprint(prevValue+1), &etcd.SetOptions{PrevIndex: prevIndex})
 		if err != nil {
 			cas_delay()
 			continue
@@ -117,7 +117,7 @@ func (s *server) Next(ctx context.Context, in *pb.Snowflake_Key) (*pb.Snowflake_
 		prevIndex := resp.Node.ModifiedIndex
 
 		// CompareAndSwap
-		resp, err = client.Set(context.Background(), key, fmt.Sprintf(prevValue+1), &etcd.SetOptions{PrevIndex: prevIndex})
+		resp, err = client.Set(context.Background(), key, fmt.Sprint(prevValue+1), &etcd.SetOptions{PrevIndex: prevIndex})
 		if err != nil {
 			cas_delay()
 			continue
