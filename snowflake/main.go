@@ -14,12 +14,12 @@ const (
 
 func main() {
 	// listen
-	listen, err := net.Listen("tcp", _port)
+	lis, err := net.Listen("tcp", _port)
 	if err != nil {
 		log.Panic(err)
 		os.Exit(-1)
 	}
-	log.Info("listening on ", listen.Addr())
+	log.Info("listening on ", lis.Addr())
 
 	// register service
 	s := grpc.NewServer()
@@ -28,5 +28,5 @@ func main() {
 	pb.RegisterSnowflakeServiceServer(s, instance)
 
 	// Start service
-	s.Serve(listen)
+	s.Serve(lis)
 }
