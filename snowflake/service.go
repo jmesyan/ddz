@@ -9,8 +9,8 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	etcd "github.com/coreos/etcd/client"
-	"snowflake/etcdclient"
-	pb "snowflake/proto"
+	"github.com/master-g/golandlord/snowflake/etcdclient"
+	pb "github.com/master-g/golandlord/snowflake/proto"
     "time"
     "math/rand"
 )
