@@ -1,3 +1,7 @@
+/*
+ * This is a standard gRPC server implementation
+ * the Snowflake.ServiceServer is implement in service.go
+ */
 package main
 
 import (

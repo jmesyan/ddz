@@ -2,6 +2,7 @@
 
 # --net=host, bind the container to the host interface
 # so other container can access this container via localhost:port
+# ps. --net=host is not working on macOS, see https://github.com/docker/for-mac/issues/68
 
 docker run -d --net=host -p 2379:2379 -p 2380:2380 --name etcd quay.io/coreos/etcd \
     /usr/local/bin/etcd \

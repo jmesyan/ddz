@@ -151,7 +151,7 @@ func (s *server) uuid_task() {
 			if sn == 0 { // serial number overflows, wait until next ms
 				t = s.wait_ms(last_ts)
 			}
-		} else { // new millsecond, reset serial number to 0
+		} else { // new millisecond, reset serial number to 0
 			sn = 0
 		}
 		// remember last timestamp
