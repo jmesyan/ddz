@@ -65,3 +65,23 @@ func TestCardSlice_Concat(t *testing.T) {
 		}
 	}
 }
+
+//func test_whatever() {
+//    f1 := ddz.CardSliceFromString("♣T ♦9 ♠8 ♥8 ♠7 ♣7 ♦6 ♣6 ♠5 ♣5 ♣4")
+//
+//    fmt.Println(f1.ToString())
+//    fmt.Println("Standard analyze:")
+//
+//    standardList := f1.StandardAnalyze()
+//    for i := 0; i < len(standardList); i++ {
+//        fmt.Println(standardList[i].ToString())
+//    }
+//
+//    fmt.Println("-----------------")
+//    fmt.Println("Advance analyze:")
+//
+//    advanceList := f1.AdvanceAnalyze()
+//    for i := 0; i < len(advanceList); i++ {
+//        fmt.Println(advanceList[i].ToString())
+//    }
+//}
