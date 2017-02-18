@@ -11,19 +11,19 @@ const (
 	DEFAULT_ETCD = "http://127.0.0.1:2379"
 )
 
-var machines []string
+var endpoints []string
 var client etcdClient.Client
 
 func init() {
 	// etcd client
-	machines = []string{DEFAULT_ETCD}
+	endpoints = []string{DEFAULT_ETCD}
 	if env := os.Getenv("ETCD_HOST"); env != "" {
-		machines = strings.Split(env, ";")
+		endpoints = strings.Split(env, ";")
 	}
 
 	// config
 	cfg := etcdClient.Config{
-		Endpoints: machines,
+		Endpoints: endpoints,
 		Transport: etcdClient.DefaultTransport,
 	}
 
