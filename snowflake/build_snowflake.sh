@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-docker build -t snowflake .
+docker build --no-cache --rm=true -t snowflake .
