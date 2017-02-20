@@ -13,7 +13,7 @@ const (
 )
 
 func TestCasDelay(t *testing.T) {
-	cas_delay()
+	casDelay()
 }
 
 func TestSnowflake(t *testing.T) {

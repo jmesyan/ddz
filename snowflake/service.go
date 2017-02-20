@@ -32,39 +32,39 @@ const (
 )
 
 type server struct {
-	machine_id  uint64 // 10-bit machine id
-	client_pool chan etcd.KeysAPI
-	ch_proc     chan chan uint64
+    machineId  uint64 // 10-bit machine id
+    clientPool chan etcd.KeysAPI
+    chProc     chan chan uint64
 }
 
 func (s *server) init() {
-	s.client_pool = make(chan etcd.KeysAPI, CONCURRENT)
-	s.ch_proc = make(chan chan uint64, UUID_QUEUE)
+	s.clientPool = make(chan etcd.KeysAPI, CONCURRENT)
+	s.chProc = make(chan chan uint64, UUID_QUEUE)
 
 	// Init client pool
 	for i := 0; i < CONCURRENT; i++ {
-		s.client_pool <- etcdclient.KeysAPI()
+		s.clientPool <- etcdclient.KeysAPI()
 	}
 
 	// Check if user specified machine id is set
 	if env := os.Getenv(ENV_MACHINE_ID); env != "" {
 		if id, err := strconv.Atoi(env); err == nil {
-			s.machine_id = (uint64(id) & MACHINE_ID_MASK) << 12
+			s.machineId = (uint64(id) & MACHINE_ID_MASK) << 12
 			log.Info("machine id specified:", id)
 		} else {
 			log.Panic(err)
 			os.Exit(-1)
 		}
 	} else {
-		s.init_machine_id()
+		s.initMachineId()
 	}
 
-	go s.uuid_task()
+	go s.uuidTask()
 }
 
-func (s *server) init_machine_id() {
-	client := <-s.client_pool
-	defer func() { s.client_pool <- client }()
+func (s *server) initMachineId() {
+	client := <-s.clientPool
+	defer func() { s.clientPool <- client }()
 
 	for {
 		// Get the key
@@ -85,20 +85,20 @@ func (s *server) init_machine_id() {
 		// CompareAndSwap
 		resp, err = client.Set(context.Background(), UUID_KEY, fmt.Sprint(prevValue+1), &etcd.SetOptions{PrevIndex: prevIndex})
 		if err != nil {
-			cas_delay()
+			casDelay()
 			continue
 		}
 
 		// record serial number of this service, already shifted
-		s.machine_id = (uint64(prevValue+1) & MACHINE_ID_MASK) << 12
+		s.machineId = (uint64(prevValue+1) & MACHINE_ID_MASK) << 12
 		return
 	}
 }
 
 // Get next value of a key, like auto-increment in mysql
 func (s *server) Next(ctx context.Context, in *pb.Snowflake_Key) (*pb.Snowflake_Value, error) {
-	client := <-s.client_pool
-	defer func() { s.client_pool <- client }()
+	client := <-s.clientPool
+	defer func() { s.clientPool <- client }()
 	key := PATH + in.Name
 	for {
 		// Get the key
@@ -119,7 +119,7 @@ func (s *server) Next(ctx context.Context, in *pb.Snowflake_Key) (*pb.Snowflake_
 		// CompareAndSwap
 		resp, err = client.Set(context.Background(), key, fmt.Sprint(prevValue+1), &etcd.SetOptions{PrevIndex: prevIndex})
 		if err != nil {
-			cas_delay()
+			casDelay()
 			continue
 		}
 		return &pb.Snowflake_Value{int64(prevValue + 1)}, nil
@@ -129,33 +129,33 @@ func (s *server) Next(ctx context.Context, in *pb.Snowflake_Key) (*pb.Snowflake_
 // Generate an unique uuid
 func (s *server) GetUUID(context.Context, *pb.Snowflake_NullRequest) (*pb.Snowflake_UUID, error) {
 	req := make(chan uint64, 1)
-	s.ch_proc <- req
+	s.chProc <- req
 	return &pb.Snowflake_UUID{<-req}, nil
 }
 
 // UUID generator
-func (s *server) uuid_task() {
+func (s *server) uuidTask() {
 	var sn uint64     // 12-bit serial no
-	var last_ts int64 // last timestamp
+	var lastTs int64 // last timestamp
 	for {
-		ret := <-s.ch_proc
+		ret := <-s.chProc
 		// get a correct serial number
 		t := ts()
-		if t < last_ts { // clock shift backward
+		if t < lastTs { // clock shift backward
 			log.Error("clock shift happened, waiting until the clock moving to the next millisecond.")
-			t = s.wait_ms(last_ts)
+			t = s.waitMilliseconds(lastTs)
 		}
 
-		if last_ts == t { // same millisecond
+		if lastTs == t { // same millisecond
 			sn = (sn + 1) & SN_MASK
 			if sn == 0 { // serial number overflows, wait until next ms
-				t = s.wait_ms(last_ts)
+				t = s.waitMilliseconds(lastTs)
 			}
 		} else { // new millisecond, reset serial number to 0
 			sn = 0
 		}
 		// remember last timestamp
-		last_ts = t
+		lastTs = t
 
 		// generate uuid, format:
 		//
@@ -163,16 +163,16 @@ func (s *server) uuid_task() {
 		// 1-bit	41bit timestamp			10bit machine-id	12bit sn
 		var uuid uint64
 		uuid |= (uint64(t) & TS_MASK) << 22
-		uuid |= s.machine_id
+		uuid |= s.machineId
 		uuid |= sn
 		ret <- uuid
 	}
 }
 
 // wait_ms will spin wait till next millisecond.
-func (s *server) wait_ms(last_ts int64) int64 {
+func (s *server) waitMilliseconds(lastTs int64) int64 {
 	t := ts()
-	for t <= last_ts {
+	for t <= lastTs {
 		t = ts()
 	}
 	return t
@@ -180,7 +180,7 @@ func (s *server) wait_ms(last_ts int64) int64 {
 
 ////////////////////////////////////////////////////////////////////////////////
 // random delay
-func cas_delay() {
+func casDelay() {
 	<-time.After(time.Duration(rand.Int63n(BACKOFF)) * time.Millisecond)
 }
 
