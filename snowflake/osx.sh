@@ -4,14 +4,10 @@
 # so other container can access this container via localhost:port
 # ps. --net=host is not working on macOS, see https://github.com/docker/for-mac/issues/68
 
-docker stop etcd
-docker rm etcd
-docker stop snowflake1
-docker rm snowflake1
-
 #IPADDR=$(ifconfig en0 | grep "inet " | cut -d " " -f2)
 IPADDR=127.0.0.1
 
+docker rm -f etcd
 docker run -d -p 2379:2379 -p 2380:2380 --name etcd quay.io/coreos/etcd \
     /usr/local/bin/etcd \
     --data-dir=data.etcd --name etcd0 \
@@ -24,5 +20,6 @@ curl -L -X PUT http://$IPADDR:2379/v2/keys/seqs/test_key -d value="0"
 curl -L -X PUT http://$IPADDR:2379/v2/keys/seqs/userid -d value="0"
 curl -L -X PUT http://$IPADDR:2379/v2/keys/seqs/snowflake-uuid -d value="0"
 
+docker rm -f snowflake1
 docker build --no-cache --rm=true -t snowflake .
 docker run --name snowflake1 -e SERVICE_ID=snowflake1 -e MACHINE_ID=1 -p 40001:40001 -d -P snowflake

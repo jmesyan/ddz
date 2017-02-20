@@ -4,6 +4,7 @@
 # so other container can access this container via localhost:port
 # ps. --net=host is not working on macOS, see https://github.com/docker/for-mac/issues/68
 
+docker rm -f etcd
 docker run -d --net=host -p 2379:2379 -p 2380:2380 --name etcd quay.io/coreos/etcd \
     /usr/local/bin/etcd \
     --data-dir=data.etcd --name etcd0 \
