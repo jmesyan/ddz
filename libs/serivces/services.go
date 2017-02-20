@@ -3,7 +3,7 @@ package serivces
 import (
 	"sync"
 
-	etcdClient "github.com/coreos/etcd/client"
+	etcdclient "github.com/coreos/etcd/client"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"log"
@@ -37,7 +37,7 @@ type servicePool struct {
 	services         map[string]*service
 	knownNames       map[string]bool // store names.txt
 	nameCheckEnabled bool
-	client           etcdClient.Client
+	client           etcdclient.Client
 	callbacks        map[string][]chan string // service add callback notify
 }
 
@@ -61,11 +61,11 @@ func (p *servicePool) init(names ...string) {
 	}
 
 	// init etcd client
-	cfg := etcdClient.Config{
+	cfg := etcdclient.Config{
 		Endpoints: endpoints,
-		Transport: etcdClient.DefaultTransport,
+		Transport: etcdclient.DefaultTransport,
 	}
-	c, err := etcdClient.New(cfg)
+	c, err := etcdclient.New(cfg)
 	if err != nil {
 		log.Panic(err)
 		os.Exit(-1)
@@ -93,8 +93,8 @@ func (p *servicePool) init(names ...string) {
 	p.connectAll(DEFAULT_SERVICE_PATH)
 }
 
-func (p *servicePool) newEtcdKeysAPI() etcdClient.KeysAPI {
-	return etcdClient.NewKeysAPI(p.client)
+func (p *servicePool) newEtcdKeysAPI() etcdclient.KeysAPI {
+	return etcdclient.NewKeysAPI(p.client)
 }
 
 func (p *servicePool) findService(path string) (service, bool) {
@@ -132,7 +132,7 @@ func (p *servicePool) connectAll(directory string) {
 	keysAPI := p.newEtcdKeysAPI()
 	// get the keys under the directory
 	log.Println("connecting the services under:", directory)
-	resp, err := keysAPI.Get(context.Background(), directory, &etcdClient.GetOptions{Recursive: true})
+	resp, err := keysAPI.Get(context.Background(), directory, &etcdclient.GetOptions{Recursive: true})
 	if err != nil {
 		log.Println(err)
 		return
@@ -159,7 +159,7 @@ func (p *servicePool) connectAll(directory string) {
 // watcher for data change in etcd director
 func (p *servicePool) watcher() {
 	keysAPI := p.newEtcdKeysAPI()
-	w := keysAPI.Watcher(DEFAULT_SERVICE_PATH, &etcdClient.WatcherOptions{Recursive: true})
+	w := keysAPI.Watcher(DEFAULT_SERVICE_PATH, &etcdclient.WatcherOptions{Recursive: true})
 	for {
 		resp, err := w.Next(context.Background())
 		if err != nil {
