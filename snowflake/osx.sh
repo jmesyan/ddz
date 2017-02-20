@@ -16,10 +16,10 @@ docker run -d -p 2379:2379 -p 2380:2380 --name etcd quay.io/coreos/etcd \
     --initial-cluster etcd0=http://$IPADDR:2380 \
     --initial-cluster-state new --initial-cluster-token my-etcd-token
 
-curl -L -X PUT http://$IPADDR:2379/v2/keys/seqs/test_key -d value="0"
-curl -L -X PUT http://$IPADDR:2379/v2/keys/seqs/userid -d value="0"
-curl -L -X PUT http://$IPADDR:2379/v2/keys/seqs/snowflake-uuid -d value="0"
-
 docker rm -f snowflake1
 docker build --no-cache --rm=true -t snowflake .
 docker run --name snowflake1 -e SERVICE_ID=snowflake1 -e MACHINE_ID=1 -p 40001:40001 -d -P snowflake
+
+curl -L -X PUT http://$IPADDR:2379/v2/keys/seqs/test_key -d value="0"
+curl -L -X PUT http://$IPADDR:2379/v2/keys/seqs/userid -d value="0"
+curl -L -X PUT http://$IPADDR:2379/v2/keys/seqs/snowflake-uuid -d value="0"

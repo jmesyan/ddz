@@ -14,7 +14,15 @@ change the ip address in etcdclient/client.go to mac's ip address
 *for example:*  
 ```go
 const (
-	DEFAULT_ETCD = "http://192.168.0.10:2379"
+	DEFAULT_ETCD = "http://127.0.0.1:2379"
+)
+```
+
+and if you want to run the go test, you may also need to change  the ip address in service_test.go
+```go
+const (
+	address  = "127.0.0.1:40001"
+	test_key = "/test_key"
 )
 ```
 
