@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	address  = "localhost:40001"
+	address  = "192.168.0.10:40001"
 	test_key = "/test_key"
 )
 
