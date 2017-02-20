@@ -8,11 +8,11 @@ import (
 	"strconv"
 	"time"
 
-	"context"
 	log "github.com/Sirupsen/logrus"
 	etcd "github.com/coreos/etcd/client"
 	"github.com/master-g/golandlord/snowflake/etcdclient"
 	pb "github.com/master-g/golandlord/snowflake/proto"
+	"golang.org/x/net/context"
 )
 
 const (
