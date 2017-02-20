@@ -2,7 +2,7 @@ package etcdclient
 
 import (
 	log "github.com/Sirupsen/logrus"
-	etcdClient "github.com/coreos/etcd/client"
+	etcdclient "github.com/coreos/etcd/client"
 	"os"
 	"strings"
 )
@@ -13,7 +13,7 @@ const (
 )
 
 var endpoints []string
-var client etcdClient.Client
+var client etcdclient.Client
 
 func init() {
 	// etcd client
@@ -23,13 +23,13 @@ func init() {
 	}
 
 	// config
-	cfg := etcdClient.Config{
+	cfg := etcdclient.Config{
 		Endpoints: endpoints,
-		Transport: etcdClient.DefaultTransport,
+		Transport: etcdclient.DefaultTransport,
 	}
 
 	// create client
-	c, err := etcdClient.New(cfg)
+	c, err := etcdclient.New(cfg)
 	if err != nil {
 		log.Error(err)
 		return
@@ -37,6 +37,6 @@ func init() {
 	client = c
 }
 
-func KeysAPI() etcdClient.KeysAPI {
-	return etcdClient.NewKeysAPI(client)
+func KeysAPI() etcdclient.KeysAPI {
+	return etcdclient.NewKeysAPI(client)
 }
