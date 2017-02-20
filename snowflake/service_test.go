@@ -1,8 +1,8 @@
 package main
 
 import (
+	"context"
 	pb "github.com/master-g/golandlord/snowflake/proto"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"testing"
 )

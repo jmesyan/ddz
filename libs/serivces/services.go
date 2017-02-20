@@ -3,8 +3,8 @@ package serivces
 import (
 	"sync"
 
+	"context"
 	etcdclient "github.com/coreos/etcd/client"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"log"
 	"os"

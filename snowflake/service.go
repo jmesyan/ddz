@@ -8,11 +8,11 @@ import (
 	"strconv"
 	"time"
 
+	"context"
 	log "github.com/Sirupsen/logrus"
 	etcd "github.com/coreos/etcd/client"
 	"github.com/master-g/golandlord/snowflake/etcdclient"
 	pb "github.com/master-g/golandlord/snowflake/proto"
-	"golang.org/x/net/context"
 )
 
 const (
@@ -32,9 +32,9 @@ const (
 )
 
 type server struct {
-    machineId  uint64 // 10-bit machine id
-    clientPool chan etcd.KeysAPI
-    chProc     chan chan uint64
+	machineId  uint64 // 10-bit machine id
+	clientPool chan etcd.KeysAPI
+	chProc     chan chan uint64
 }
 
 func (s *server) init() {
@@ -135,7 +135,7 @@ func (s *server) GetUUID(context.Context, *pb.Snowflake_NullRequest) (*pb.Snowfl
 
 // UUID generator
 func (s *server) uuidTask() {
-	var sn uint64     // 12-bit serial no
+	var sn uint64    // 12-bit serial no
 	var lastTs int64 // last timestamp
 	for {
 		ret := <-s.chProc
