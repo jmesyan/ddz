@@ -1,8 +1,6 @@
 package serivces
 
 import (
-	"sync"
-
 	"context"
 	etcdclient "github.com/coreos/etcd/client"
 	"google.golang.org/grpc"
@@ -10,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"sync/atomic"
 )
 
