@@ -78,7 +78,7 @@ func (p *servicePool) init(names ...string) {
 
 	// name list
 	if len(names) == 0 {
-		names = p.loadNames
+		names = p.loadNames()
 	}
 	if len(names) > 0 {
 		p.nameCheckEnabled = true
@@ -97,7 +97,7 @@ func (p *servicePool) newEtcdKeysAPI() etcdclient.KeysAPI {
 	return etcdclient.NewKeysAPI(p.client)
 }
 
-func (p *servicePool) findService(path string) (service, bool) {
+func (p *servicePool) findService(path string) (*service, bool) {
 	service := p.services[path]
 	if service == nil || len(service.clients) == 0 {
 		return nil, false
