@@ -67,6 +67,12 @@
 			"path": "golang.org/x/sys/unix",
 			"revision": "e48874b42435b4347fc52bdee0424a52abc974d7",
 			"revisionTime": "2017-03-02T21:05:23Z"
+		},
+		{
+			"checksumSHA1": "1Rx4tdcCywDRfdX4Tzn/7riP6Go=",
+			"path": "gopkg.in/urfave/cli.v2",
+			"revision": "04b2f4ff79cf1fd71e138bafc67df8bbdb5b81c2",
+			"revisionTime": "2017-02-15T05:18:00Z"
 		}
 	],
 	"rootPath": "github.com/master-g/golandlord/agent"
