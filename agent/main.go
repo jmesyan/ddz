@@ -9,8 +9,8 @@ import (
 	"os"
 	"time"
 
-	. "agent/types"
-	"agent/utils"
+	. "github.com/master-g/golandlord/agent/types"
+	"github.com/master-g/golandlord/agent/utils"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/xtaci/kcp-go"
