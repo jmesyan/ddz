@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	//DEFAULT_ETCD = "http://127.0.0.1:2379"
-	DEFAULT_ETCD = "http://192.168.0.10:2379"
+	DEFAULT_ETCD = "http://127.0.0.1:2379"
+	//DEFAULT_ETCD = "http://192.168.0.10:2379"
 )
 
 var endpoints []string
