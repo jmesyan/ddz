@@ -51,16 +51,62 @@
 			"revisionTime": "2017-02-17T23:44:32Z"
 		},
 		{
+			"path": "github.com/klauspost/reedsolomon",
+			"revision": ""
+		},
+		{
+			"path": "github.com/pkg/errors",
+			"revision": ""
+		},
+		{
 			"checksumSHA1": "CoxdaTYdPZNJXr8mJfLxye428N0=",
 			"path": "github.com/ugorji/go/codec",
 			"revision": "c88ee250d0221a57af388746f5cf03768c21d6e2",
 			"revisionTime": "2017-02-15T20:11:44Z"
 		},
 		{
+			"checksumSHA1": "j55XqlaFjouwvWlFitU0Q1EDuno=",
+			"path": "github.com/xtaci/kcp-go",
+			"revision": "bf95749e1be2a3f152ba0004eae0c4f47fbf1251",
+			"revisionTime": "2017-03-04T10:43:02Z"
+		},
+		{
+			"path": "golang.org/x/crypto/blowfish",
+			"revision": ""
+		},
+		{
+			"path": "golang.org/x/crypto/cast5",
+			"revision": ""
+		},
+		{
+			"path": "golang.org/x/crypto/pbkdf2",
+			"revision": ""
+		},
+		{
+			"path": "golang.org/x/crypto/salsa20",
+			"revision": ""
+		},
+		{
+			"path": "golang.org/x/crypto/tea",
+			"revision": ""
+		},
+		{
+			"path": "golang.org/x/crypto/twofish",
+			"revision": ""
+		},
+		{
+			"path": "golang.org/x/crypto/xtea",
+			"revision": ""
+		},
+		{
 			"checksumSHA1": "Y+HGqEkYM15ir+J93MEaHdyFy0c=",
 			"path": "golang.org/x/net/context",
 			"revision": "6b27048ae5e6ad1ef927e72e437531493de612fe",
 			"revisionTime": "2017-02-17T08:49:01Z"
+		},
+		{
+			"path": "golang.org/x/net/ipv4",
+			"revision": ""
 		},
 		{
 			"checksumSHA1": "Cr7PCm9qzQ42fegneTyZqJMKUqg=",
