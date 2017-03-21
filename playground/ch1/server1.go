@@ -5,27 +5,41 @@ import (
 	"image/color"
 	"image/gif"
 	"io"
+	"log"
 	"math"
 	"math/rand"
-	"os"
+	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/lucasb-eyer/go-colorful"
 )
 
 func main() {
-	rand.Seed(time.Now().UTC().UnixNano())
-	lissajous(os.Stdout)
+	http.HandleFunc("/", handler)
+	log.Fatal(http.ListenAndServe("localhost:8000", nil))
 }
 
-func lissajous(out io.Writer) {
+func handler(w http.ResponseWriter, r *http.Request) {
+	defaultCycle := 5
+	val := r.FormValue("cycles")
+	if cycles, err := strconv.Atoi(val); err == nil {
+		log.Println("lissajous with cycles=", cycles)
+		lissajous(w, cycles)
+	} else {
+		lissajous(w, defaultCycle)
+	}
+}
+
+func lissajous(out io.Writer, cycles int) {
 	const (
-		cycles  = 5
 		res     = 0.001
 		size    = 100
 		nframes = 64
 		delay   = 8
 	)
+
+	rand.Seed(time.Now().UTC().UnixNano())
 
 	colors := colorful.FastHappyPalette(nframes)
 	colorPalette := make([]color.Color, 64)
@@ -41,7 +55,7 @@ func lissajous(out io.Writer) {
 	for i := 0; i < nframes; i++ {
 		rect := image.Rect(0, 0, 2*size+1, 2*size+1)
 		img := image.NewPaletted(rect, colorPalette)
-		for t := 0.0; t < cycles*2*math.Pi; t += res {
+		for t := 0.0; t < float64(cycles)*2*math.Pi; t += res {
 			x := math.Sin(t)
 			y := math.Sin(t*freq + phase)
 			img.SetColorIndex(size+int(x*size+0.5), size+int(y*size+0.5), uint8(i))
