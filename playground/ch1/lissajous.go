@@ -1,4 +1,4 @@
-package main
+package ch1
 
 import (
 	"image"
@@ -7,25 +7,20 @@ import (
 	"io"
 	"math"
 	"math/rand"
-	"os"
 	"time"
 
 	"github.com/lucasb-eyer/go-colorful"
 )
 
-func main() {
-	rand.Seed(time.Now().UTC().UnixNano())
-	lissajous(os.Stdout)
-}
-
-func lissajous(out io.Writer) {
+func Lissajous(out io.Writer, cycles int) {
 	const (
-		cycles  = 5
 		res     = 0.001
-		size    = 100
+		size    = 256
 		nframes = 64
 		delay   = 8
 	)
+
+	rand.Seed(time.Now().UTC().UnixNano())
 
 	colors := colorful.FastHappyPalette(nframes)
 	colorPalette := make([]color.Color, 64)
@@ -41,7 +36,7 @@ func lissajous(out io.Writer) {
 	for i := 0; i < nframes; i++ {
 		rect := image.Rect(0, 0, 2*size+1, 2*size+1)
 		img := image.NewPaletted(rect, colorPalette)
-		for t := 0.0; t < cycles*2*math.Pi; t += res {
+		for t := 0.0; t < float64(cycles)*2*math.Pi; t += res {
 			x := math.Sin(t)
 			y := math.Sin(t*freq + phase)
 			img.SetColorIndex(size+int(x*size+0.5), size+int(y*size+0.5), uint8(i))
