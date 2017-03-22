@@ -1,7 +1,9 @@
 package main
 
-import "github.com/master-g/golandlord/playground/ch1"
+import (
+	"fmt"
+)
 
 func main() {
-	ch1.Serve()
+	fmt.Println("Hello world")
 }
