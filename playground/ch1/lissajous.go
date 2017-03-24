@@ -12,6 +12,7 @@ import (
 	"github.com/lucasb-eyer/go-colorful"
 )
 
+// Lissajous draw a lissajous gif to out with cycles
 func Lissajous(out io.Writer, cycles int) {
 	const (
 		res     = 0.001

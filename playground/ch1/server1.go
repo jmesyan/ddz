@@ -6,6 +6,7 @@ import (
 	"strconv"
 )
 
+// Serve starts a lissajous server on localhost:8000
 func Serve() {
 	http.HandleFunc("/", handler)
 	log.Fatal(http.ListenAndServe("localhost:8000", nil))

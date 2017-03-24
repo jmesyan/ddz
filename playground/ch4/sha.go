@@ -15,6 +15,7 @@ func popCount(x [32]byte) int {
 	return n
 }
 
+// SHA256Diff calculate the different bits between two sha256 sums
 func SHA256Diff(a, b []byte) int {
 	c1 := sha256.Sum256(a)
 	c2 := sha256.Sum256(b)
