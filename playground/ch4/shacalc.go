@@ -1,4 +1,4 @@
-package main
+package ch4
 
 import (
 	"crypto/sha256"
@@ -9,7 +9,8 @@ import (
 	"sort"
 )
 
-func main() {
+// SHACalculator is a simple SHA checksum calculator application
+func SHACalculator() {
 	app := &cli.App{
 		Flags: []cli.Flag{
 			&cli.StringFlag{
