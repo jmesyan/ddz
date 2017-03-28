@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/master-g/golandlord/playground/ch8"
+	"github.com/master-g/golandlord/playground/ch4"
 )
 
 func main() {
-	ch8.Serve2()
+	ch4.SHACalculator()
 }

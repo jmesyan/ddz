@@ -7,12 +7,18 @@ package main
 import (
 	"fmt"
 	log "github.com/Sirupsen/logrus"
+	"github.com/master-g/golandlord/snowflake/etcdclient"
 	pb "github.com/master-g/golandlord/snowflake/proto"
 	"google.golang.org/grpc"
 	"gopkg.in/urfave/cli.v2"
 	"net"
 	"os"
 	"sort"
+	"strings"
+)
+
+const (
+	DEFAULT_ETCD = "http://127.0.0.1:2379"
 )
 
 func main() {
@@ -30,6 +36,7 @@ func main() {
 				Value:   "",
 				Aliases: []string{"e"},
 				Usage:   "etcd server address, if there are multiple servers, use ';' to separate",
+				EnvVars: []string{"ETCD_HOST"},
 			},
 		},
 		Name:    "snowflake",
@@ -37,7 +44,12 @@ func main() {
 		Version: "v1.0.0",
 		Action: func(c *cli.Context) error {
 			port := c.Int("port")
-			startSnowflake(port)
+			etcdHosts := c.String("etcd")
+			endpoints := []string{DEFAULT_ETCD}
+			if etcdHosts != "" {
+				endpoints = strings.Split(etcdHosts, ";")
+			}
+			startSnowflake(endpoints, port)
 			return nil
 		},
 	}
@@ -46,7 +58,10 @@ func main() {
 	app.Run(os.Args)
 }
 
-func startSnowflake(port int) {
+func startSnowflake(endpoints []string, port int) {
+	// etcd client
+	etcdclient.Init(endpoints)
+
 	// listen
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
