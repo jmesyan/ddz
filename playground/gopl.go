@@ -5,5 +5,5 @@ import (
 )
 
 func main() {
-	ch8.ServeEcho()
+	ch8.Serve2()
 }

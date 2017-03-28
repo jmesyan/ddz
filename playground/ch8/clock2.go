@@ -19,6 +19,7 @@ func Serve2() {
 			log.Print(err)
 			continue
 		}
+		log.Println("accept", conn.RemoteAddr())
 		go handleConn2(conn)
 	}
 }
