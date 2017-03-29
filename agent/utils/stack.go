@@ -1,13 +1,12 @@
 package utils
 
 import (
-	"runtime"
-
 	log "github.com/Sirupsen/logrus"
 	"github.com/davecgh/go-spew/spew"
+	"runtime"
 )
 
-// 产生panic时的调用栈打印
+// PrintPanicStack will print the panic stack to the log
 func PrintPanicStack(extras ...interface{}) {
 	if x := recover(); x != nil {
 		log.Error(x)
@@ -20,7 +19,7 @@ func PrintPanicStack(extras ...interface{}) {
 		}
 
 		for k := range extras {
-			log.Errorf("EXRAS#%v DATA:%v\n", k, spew.Sdump(extras[k]))
+			log.Errorf("EXTRAS#%v DATA:%v\n", k, spew.Sdump(extras[k]))
 		}
 	}
 }
