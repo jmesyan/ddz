@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	address  = "127.0.0.1:40001"
-	//address  = "192.168.0.10:40001"
+	//address  = "127.0.0.1:40001"
+	address  = "192.168.0.7:40001"
 	test_key = "/test_key"
 )
 
