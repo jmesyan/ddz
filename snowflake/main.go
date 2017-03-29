@@ -63,12 +63,12 @@ func startSnowflake(endpoints []string, port int) {
 	etcdclient.Init(endpoints)
 
 	// listen
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		log.Panic(err)
 		os.Exit(-1)
 	}
-	log.Info("listening on ", lis.Addr())
+	log.Info("listening on ", listener.Addr())
 
 	// register service
 	s := grpc.NewServer()
@@ -77,5 +77,22 @@ func startSnowflake(endpoints []string, port int) {
 	pb.RegisterSnowflakeServiceServer(s, instance)
 
 	// Start service
-	s.Serve(lis)
+	s.Serve(listener)
+}
+
+// GetLocalIP returns the non loopback local IP of the host
+func GetLocalIP() string {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return ""
+	}
+	for _, address := range addrs {
+		// check the address type and if it is not a loopback the display it
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				return ipnet.IP.String()
+			}
+		}
+	}
+	return ""
 }
