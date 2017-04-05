@@ -2,26 +2,46 @@ package main
 
 import (
 	"fmt"
-	"net"
+	"github.com/master-g/golandlord/playground/bp"
+	"io"
+	"net/http"
 )
 
-func main() {
-	fmt.Println(GetLocalIP())
+func hello(w http.ResponseWriter, r *http.Request) {
+	io.WriteString(w, "Hello world!")
 }
 
-// GetLocalIP returns the non loopback local IP of the host
-func GetLocalIP() string {
-	addrs, err := net.InterfaceAddrs()
-	if err != nil {
-		return ""
+func bluePay(w http.ResponseWriter, r *http.Request) {
+	keys := []string{
+		"cmd",
+		"bt_id",
+		"msisdn",
+		"operator",
+		"paytype",
+		"price",
+		"productid",
+		"status",
+		"t_id",
+		"currency",
+		"interfacetype",
+		"encrypt",
 	}
-	for _, address := range addrs {
-		// check the address type and if it is not a loopback the display it
-		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			if ipnet.IP.To4() != nil {
-				return ipnet.IP.String()
-			}
-		}
+
+	queries := r.URL.Query()
+
+	for _, v := range keys {
+		fmt.Println(v, queries.Get(v))
 	}
-	return ""
+	io.WriteString(w, "proceed")
+}
+
+func main() {
+	handler := new(bp.Handler)
+	handler.RegisterRouter("/", hello)
+	handler.RegisterRouter("/BlueNotification", bluePay)
+	server := http.Server{
+		Addr:    ":8000",
+		Handler: handler,
+	}
+	server.ListenAndServe()
 }
