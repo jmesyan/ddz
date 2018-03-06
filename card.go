@@ -4,22 +4,45 @@ import (
 	"errors"
 	"math/rand"
 	"sort"
+	"strconv"
+	"strings"
 )
 
-// Card represent poker card with uint32 number
-// xbbbbbbb|bbbbbbbb|cdhsrrrr|xxpppppp
-// p: prime number (duce=2, trey=3, ace=41)
-// r: rank (duce=0, trey=1, ace=12)
-// cdhs: suits (c=club, d=diamond, h=heart, s=spade)
-// b: rank bitmask
-type Card uint32
+const (
+	Rank3 Rank = 0x000000100
+	Rank4 Rank = 0x000000200
+	Rank5 Rank = 0x000000300
+	Rank6 Rank = 0x000000400
+	Rank7 Rank = 0x000000500
+	Rank8 Rank = 0x000000600
+	Rank9 Rank = 0x000000700
+	RankT Rank = 0x000000800
+	RankJ Rank = 0x000000900
+	RankQ Rank = 0x000000A00
+	RankK Rank = 0x000000B00
+	RankA Rank = 0x000000C00
+	Rank2 Rank = 0x000000D00
+	Rankr Rank = 0x000000E00
+	RankR Rank = 0x000000F00
+
+	RankNumber = 15
+)
+
+const (
+	SuitClub    Suit = 0x00008000
+	SuitDiamond Suit = 0x00004000
+	SuitHeart   Suit = 0x00002000
+	SuitSpade   Suit = 0x00001000
+)
 
 const (
 	maskPrime = 0x000000FF
 	maskRank  = 0x00000F00
 	maskSuit  = 0x0000F000
 	maskBits  = 0xFFFF0000
+)
 
+const (
 	Prime3 = 0x00000002
 	Prime4 = 0x00000003
 	Prime5 = 0x00000005
@@ -35,28 +58,9 @@ const (
 	Prime2 = 0x00000029
 	Primer = 0x0000002B
 	PrimeR = 0x0000002F
+)
 
-	Rank3 = 0x000000100
-	Rank4 = 0x000000200
-	Rank5 = 0x000000300
-	Rank6 = 0x000000400
-	Rank7 = 0x000000500
-	Rank8 = 0x000000600
-	Rank9 = 0x000000700
-	RankT = 0x000000800
-	RankJ = 0x000000900
-	RankQ = 0x000000A00
-	RankK = 0x000000B00
-	RankA = 0x000000C00
-	Rank2 = 0x000000D00
-	Rankr = 0x000000E00
-	RankR = 0x000000F00
-
-	SuitClub    = 0x00008000
-	SuitDiamond = 0x00004000
-	SuitHeart   = 0x00002000
-	SuitSpade   = 0x00001000
-
+const (
 	Bits3 = 0x00010000
 	Bits4 = 0x00020000
 	Bits5 = 0x00040000
@@ -72,78 +76,99 @@ const (
 	Bits2 = 0x10000000
 	Bitsr = 0x20000000
 	BitsR = 0x40000000
-
-	Club3    = Card(0x00018102)
-	Club4    = Card(0x00028203)
-	Club5    = Card(0x00048305)
-	Club6    = Card(0x00088407)
-	Club7    = Card(0x0010850B)
-	Club8    = Card(0x0020860D)
-	Club9    = Card(0x00408711)
-	ClubT    = Card(0x00808813)
-	ClubJ    = Card(0x01008917)
-	ClubQ    = Card(0x02008A1D)
-	ClubK    = Card(0x04008B1F)
-	ClubA    = Card(0x08008C25)
-	Club2    = Card(0x10008D29)
-	Diamond3 = Card(0x00014102)
-	Diamond4 = Card(0x00024203)
-	Diamond5 = Card(0x00044305)
-	Diamond6 = Card(0x00084407)
-	Diamond7 = Card(0x0010450B)
-	Diamond8 = Card(0x0020460D)
-	Diamond9 = Card(0x00404711)
-	DiamondT = Card(0x00804813)
-	DiamondJ = Card(0x01004917)
-	DiamondQ = Card(0x02004A1D)
-	DiamondK = Card(0x04004B1F)
-	DiamondA = Card(0x08004C25)
-	Diamond2 = Card(0x10004D29)
-	Heart3   = Card(0x00012102)
-	Heart4   = Card(0x00022203)
-	Heart5   = Card(0x00042305)
-	Heart6   = Card(0x00082407)
-	Heart7   = Card(0x0010250B)
-	Heart8   = Card(0x0020260D)
-	Heart9   = Card(0x00402711)
-	HeartT   = Card(0x00802813)
-	HeartJ   = Card(0x01002917)
-	HeartQ   = Card(0x02002A1D)
-	HeartK   = Card(0x04002B1F)
-	HeartA   = Card(0x08002C25)
-	Heart2   = Card(0x10002D29)
-	Spade3   = Card(0x00011102)
-	Spade4   = Card(0x00021203)
-	Spade5   = Card(0x00041305)
-	Spade6   = Card(0x00081407)
-	Spade7   = Card(0x0010150B)
-	Spade8   = Card(0x0020160D)
-	Spade9   = Card(0x00401711)
-	SpadeT   = Card(0x00801813)
-	SpadeJ   = Card(0x01001917)
-	SpadeQ   = Card(0x02001A1D)
-	SpadeK   = Card(0x04001B1F)
-	SpadeA   = Card(0x08001C25)
-	Spade2   = Card(0x10001D29)
-	Jokerr   = Card(0x20008E2B)
-	JokerR   = Card(0x40004F2F)
 )
+
+const (
+	Club3    Card = 0x00018102
+	Club4    Card = 0x00028203
+	Club5    Card = 0x00048305
+	Club6    Card = 0x00088407
+	Club7    Card = 0x0010850B
+	Club8    Card = 0x0020860D
+	Club9    Card = 0x00408711
+	ClubT    Card = 0x00808813
+	ClubJ    Card = 0x01008917
+	ClubQ    Card = 0x02008A1D
+	ClubK    Card = 0x04008B1F
+	ClubA    Card = 0x08008C25
+	Club2    Card = 0x10008D29
+	Diamond3 Card = 0x00014102
+	Diamond4 Card = 0x00024203
+	Diamond5 Card = 0x00044305
+	Diamond6 Card = 0x00084407
+	Diamond7 Card = 0x0010450B
+	Diamond8 Card = 0x0020460D
+	Diamond9 Card = 0x00404711
+	DiamondT Card = 0x00804813
+	DiamondJ Card = 0x01004917
+	DiamondQ Card = 0x02004A1D
+	DiamondK Card = 0x04004B1F
+	DiamondA Card = 0x08004C25
+	Diamond2 Card = 0x10004D29
+	Heart3   Card = 0x00012102
+	Heart4   Card = 0x00022203
+	Heart5   Card = 0x00042305
+	Heart6   Card = 0x00082407
+	Heart7   Card = 0x0010250B
+	Heart8   Card = 0x0020260D
+	Heart9   Card = 0x00402711
+	HeartT   Card = 0x00802813
+	HeartJ   Card = 0x01002917
+	HeartQ   Card = 0x02002A1D
+	HeartK   Card = 0x04002B1F
+	HeartA   Card = 0x08002C25
+	Heart2   Card = 0x10002D29
+	Spade3   Card = 0x00011102
+	Spade4   Card = 0x00021203
+	Spade5   Card = 0x00041305
+	Spade6   Card = 0x00081407
+	Spade7   Card = 0x0010150B
+	Spade8   Card = 0x0020160D
+	Spade9   Card = 0x00401711
+	SpadeT   Card = 0x00801813
+	SpadeJ   Card = 0x01001917
+	SpadeQ   Card = 0x02001A1D
+	SpadeK   Card = 0x04001B1F
+	SpadeA   Card = 0x08001C25
+	Spade2   Card = 0x10001D29
+	Jokerr   Card = 0x20008E2B
+	JokerR   Card = 0x40004F2F
+)
+
+// Card represent card with uint32 number
+// xbbbbbbb|bbbbbbbb|cdhsrrrr|xxpppppp
+// p: prime number (duce=2, trey=3, ace=41)
+// r: rank (duce=0, trey=1, ace=12)
+// cdhs: suits (c=club, d=diamond, h=heart, s=spade)
+// b: rank bitmask
+type Card uint32
+
+// Suit represent card's suit with uint32 number
+type Suit uint32
+
+// Rank represent card's rank with a uint32 number
+type Rank uint32
+
+// RankCount holds ranks counts in card slice
+type RankCount struct {
+	ranks [RankNumber]int
+}
 
 var (
 	ErrorInvalidFormat = errors.New("invalid card string format")
-	suitMap            map[uint32]string
-	rankMap            map[uint32]string
+	suitMap            map[Suit]string
+	rankMap            map[Rank]string
 	cardMap            map[string]Card
 )
 
 func init() {
-	suitMap = make(map[uint32]string)
+	suitMap = make(map[Suit]string)
 	suitMap[SuitClub] = "♣"
 	suitMap[SuitDiamond] = "♦"
 	suitMap[SuitHeart] = "♥"
 	suitMap[SuitSpade] = "♠"
 
-	rankMap = make(map[uint32]string)
+	rankMap = make(map[Rank]string)
 	rankMap[Rank3] = "3"
 	rankMap[Rank4] = "4"
 	rankMap[Rank5] = "5"
@@ -223,13 +248,13 @@ func (c Card) Prime() uint32 {
 }
 
 // Rank returns card's rank bits
-func (c Card) Rank() uint32 {
-	return uint32(c & maskRank)
+func (c Card) Rank() Rank {
+	return Rank(c & maskRank)
 }
 
 // Suit returns card's suit bits
-func (c Card) Suit() uint32 {
-	return uint32(c & maskSuit)
+func (c Card) Suit() Suit {
+	return Suit(c & maskSuit)
 }
 
 // Suit returns card's bits part
@@ -340,6 +365,38 @@ func CardSet() CardSlice {
 	}
 }
 
+// CardSliceFromString parse card slice from string
+func CardSliceFromString(s, sep string) (CardSlice, error) {
+	if sep == "" {
+		sep = " "
+	}
+
+	segs := strings.Split(s, sep)
+	cs := CardSlice{}
+	for _, v := range segs {
+		c, err := CardFromString(v)
+		if err != nil {
+			return nil, err
+		}
+		cs = append(cs, c)
+	}
+
+	return cs, nil
+}
+
+// String interface
+func (cs CardSlice) String() string {
+	str := ""
+	for i, v := range cs {
+		str += v.String()
+		if i < len(cs)-1 {
+			str += " "
+		}
+	}
+
+	return str
+}
+
 // Sort cards from Joker to 3
 func (cs CardSlice) Sort() {
 	sort.Slice(cs, func(i, j int) bool {
@@ -361,4 +418,108 @@ func (cs CardSlice) Shuffle() {
 		j := rand.Intn(i + 1)
 		cs[i], cs[j] = cs[j], cs[i]
 	}
+}
+
+// Subtract remove cards that appear in rhs and return new card slice
+func (cs CardSlice) Subtract(rhs CardSlice) CardSlice {
+	n := CardSlice{}
+	for _, x := range cs {
+		found := false
+		for _, y := range rhs {
+			if x == y {
+				found = true
+				break
+			}
+		}
+		if !found {
+			n = append(n, x)
+		}
+	}
+
+	return n
+}
+
+// Find position of card in card slice
+func (cs CardSlice) Find(c Card) int {
+	for i, v := range cs {
+		if v == c {
+			return i
+		}
+	}
+
+	return -1
+}
+
+// CopyRank cards with rank from slice
+func (cs CardSlice) CopyRank(r Rank) CardSlice {
+	ret := CardSlice{}
+	for _, v := range cs {
+		if v.Rank() == r {
+			ret = append(ret, v)
+		}
+	}
+
+	return ret
+}
+
+// RemoveRank removes cards with rank, and return new card slice
+func (cs CardSlice) RemoveRank(r Rank) CardSlice {
+	n := CardSlice{}
+	for _, x := range cs {
+		if x.Rank() != r {
+			n = append(n, x)
+		}
+	}
+
+	return n
+}
+
+// Copy card slice
+func (cs CardSlice) Copy() CardSlice {
+	n := make(CardSlice, len(cs))
+	copy(n, cs)
+	return n
+}
+
+func (cs CardSlice) CountRank() RankCount {
+	rc := RankCount{}
+	rc.CountRanks(cs)
+	return rc
+}
+
+func (rc *RankCount) Count(r Rank) int {
+	return rc.ranks[r>>8-1]
+}
+
+func (rc *RankCount) Copy() RankCount {
+	n := RankCount{}
+	copy(n.ranks[:], rc.ranks[:])
+	return n
+}
+
+func (rc *RankCount) CountRanks(cs CardSlice) {
+	for _, v := range cs {
+		rc.ranks[v.Rank()>>8-1]++
+	}
+}
+
+func (rc *RankCount) Equals(rhs *RankCount) bool {
+	for i := 0; i < RankNumber; i++ {
+		if rc.ranks[i] != rhs.ranks[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func (rc RankCount) String() string {
+	s := ""
+	for i, v := range rc.ranks {
+		s += strconv.Itoa(v)
+		if i < len(rc.ranks) {
+			s += " "
+		}
+	}
+
+	return s
 }
