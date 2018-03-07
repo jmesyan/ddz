@@ -31,11 +31,6 @@ func TestCardFromString(t *testing.T) {
 	//}
 
 	cs1 := CardSet()
-	rk := RankCount{}
-	rk.CountRanks(cs1)
-	//for _, v := range cs1 {
-	//	r := v.Rank()>>8 - 1
-	//	rk.ranks[r]++
-	//}
-	fmt.Println(rk)
+	cs1.Shuffle()
+	fmt.Println(cs1)
 }

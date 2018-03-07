@@ -150,9 +150,7 @@ type Suit uint32
 type Rank uint32
 
 // RankCount holds ranks counts in card slice
-type RankCount struct {
-	ranks [RankNumber]int
-}
+type RankCount [RankNumber]int
 
 var (
 	ErrorInvalidFormat = errors.New("invalid card string format")
@@ -398,26 +396,32 @@ func (cs CardSlice) String() string {
 }
 
 // Sort cards from Joker to 3
-func (cs CardSlice) Sort() {
+func (cs CardSlice) Sort() CardSlice {
 	sort.Slice(cs, func(i, j int) bool {
 		return cs[i] > cs[j]
 	})
+
+	return cs
 }
 
 // Reverse cards
-func (cs CardSlice) Reverse() {
+func (cs CardSlice) Reverse() CardSlice {
 	for i := len(cs)/2 - 1; i >= 0; i-- {
 		opp := len(cs) - 1 - i
 		cs[i], cs[opp] = cs[opp], cs[i]
 	}
+
+	return cs
 }
 
 // Shuffle cards using Fisher-Yates algorithm
-func (cs CardSlice) Shuffle() {
+func (cs CardSlice) Shuffle() CardSlice {
 	for i := len(cs) - 1; i > 0; i-- {
 		j := rand.Intn(i + 1)
 		cs[i], cs[j] = cs[j], cs[i]
 	}
+
+	return cs
 }
 
 // Subtract remove cards that appear in rhs and return new card slice
@@ -481,42 +485,81 @@ func (cs CardSlice) Copy() CardSlice {
 	return n
 }
 
-func (cs CardSlice) CountRank() RankCount {
+// Ranks returns rank count from 3~Joker
+func (cs CardSlice) Ranks() RankCount {
 	rc := RankCount{}
-	rc.CountRanks(cs)
+	rc.Update(cs)
 	return rc
 }
 
-func (rc *RankCount) Count(r Rank) int {
-	return rc.ranks[r>>8-1]
+// Count returns how many cards are there in slice with rank
+func (rc RankCount) Count(r Rank) int {
+	return rc[r>>8-1]
 }
 
-func (rc *RankCount) Copy() RankCount {
+// Copy returns a copy of rank count
+func (rc RankCount) Copy() RankCount {
 	n := RankCount{}
-	copy(n.ranks[:], rc.ranks[:])
+	copy(n[:], rc[:])
 	return n
 }
 
-func (rc *RankCount) CountRanks(cs CardSlice) {
+// Update count ranks in card slice
+func (rc *RankCount) Update(cs CardSlice) {
 	for _, v := range cs {
-		rc.ranks[v.Rank()>>8-1]++
+		rc[v.Rank()>>8-1]++
 	}
 }
 
-func (rc *RankCount) Equals(rhs *RankCount) bool {
+// Sort rank count in descending order and return a new rank count
+func (rc RankCount) Sort() RankCount {
+	n := rc.Copy()
+	sort.Slice(n[:], func(i, j int) bool {
+		return n[i] > n[j]
+	})
+	return n
+}
+
+// Equals return true if two rank count are identical
+func (rc RankCount) Equals(rhs RankCount) bool {
 	for i := 0; i < RankNumber; i++ {
-		if rc.ranks[i] != rhs.ranks[i] {
+		if rc[i] != rhs[i] {
 			return false
 		}
 	}
 	return true
 }
 
+// IsChain checks pattern like 334455 666777 etc
+// | 666 | 777 | 888 | 999 |
+// | 123 |                   duplicate: 3
+// |  1     2     3     4  | expectLength: 4
+func (rc RankCount) IsChain(duplicate, expectLength int) bool {
+	marker := 0
+	length := 0
+	// joker and 2 cannot chained up
+	for i := Rank3; i < Rank2; i++ {
+		// found first match
+		if rc[i] == duplicate && marker == 0 {
+			marker = int(i)
+			continue
+		}
+
+		// matches end
+		if rc[i] != duplicate && marker != 0 {
+			length = int(i) - marker
+			break
+		}
+	}
+	return length == expectLength
+}
+
+// String ify rank count
 func (rc RankCount) String() string {
 	s := ""
-	for i, v := range rc.ranks {
+	for i, v := range rc {
 		s += strconv.Itoa(v)
-		if i < len(rc.ranks) {
+		if i < len(rc) {
 			s += " "
 		}
 	}
