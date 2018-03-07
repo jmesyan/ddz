@@ -38,6 +38,9 @@ type Hand struct {
 	Cards CardSlice // cards
 }
 
+// HandCompareResult represent the compare result between hands
+type HandCompareResult int
+
 const (
 	HandMinLength          = 1
 	HandMaxLength          = 20
@@ -114,11 +117,18 @@ const (
 	patternLength = 12 // 3~A
 	handVariation = 2  // except chains, hands with same length will have 2 variation at most
 	handSpecNum   = 4  // pattern, primal, kicker, chain
+
+	HandCompareIllegal = -2
+	HandCompareLess    = -1
+	HandCompareEqual   = 0
+	HandCompareGreater = 1
 )
 
 var (
-	handPattern [handPatternEnd][patternLength]int
-	handSpecs   [HandMaxLength + 1][handVariation][handSpecNum]byte
+	handPattern     [handPatternEnd][patternLength]int
+	handSpecs       [HandMaxLength + 1][handVariation][handSpecNum]byte
+	primalStringMap map[byte]string
+	kickerStringMap map[byte]string
 )
 
 func init() {
@@ -233,6 +243,25 @@ func init() {
 			{handPattern20b, HandPrimalTrio, HandKickerSolo, HandChain},
 			{0, 0, 0, 0}},
 	}
+
+	primalStringMap = map[byte]string{
+		HandPrimalNone: "none",
+		HandPrimalSolo: "solo",
+		HandPrimalPair: "pair",
+		HandPrimalTrio: "trio",
+		HandPrimalFour: "four",
+		HandPrimalBomb: "bomb",
+		HandPrimalNuke: "nuke",
+	}
+
+	kickerStringMap = map[byte]string{
+		HandKickerNone:     "none",
+		HandKickerSolo:     "solo",
+		HandKickerPair:     "pair",
+		HandKickerDualSolo: "dual solo",
+		HandKickerDualPair: "dual pair",
+	}
+
 }
 
 // Copy returns a copy of hand
@@ -387,6 +416,69 @@ func HandParse(cs CardSlice) *Hand {
 	return hand
 }
 
-func (h *Hand) compareBomb(rhs Hand) {
+// compare between hands, one of the hands must be bomb or nuke
+func (h Hand) compareBomb(rhs Hand) HandCompareResult {
+	if h.Type == rhs.Type && h.Cards[0].Rank() == rhs.Cards[0].Rank() {
+		// same type same ranks, equal
+		return HandCompareEqual
+	} else if h.Type == HandPrimalBomb && rhs.Type == HandPrimalBomb {
+		// both are bombs, compare by card ranks
+		if h.Cards[0].Rank() > rhs.Cards[0].Rank() {
+			return HandCompareGreater
+		} else {
+			return HandCompareLess
+		}
+	} else {
+		// nuke > bomb
+		if h.Primal() > rhs.Primal() {
+			return HandCompareGreater
+		} else {
+			return HandCompareLess
+		}
+	}
+}
 
+// Compare between hands
+// hands must be same type unless there are bombs or nukes
+func (h Hand) Compare(rhs Hand) HandCompareResult {
+	if h.Type != rhs.Type {
+		// different types, check for bombs or nukes
+		if !h.IsBomb() && !h.IsNuke() && !rhs.IsBomb() && !rhs.IsNuke() {
+			return HandCompareIllegal
+		} else {
+			return h.compareBomb(rhs)
+		}
+	} else {
+		// same types and not bombs or nukes
+		if len(h.Cards) != len(rhs.Cards) {
+			// different lengths
+			return HandCompareIllegal
+		} else {
+			// same types and same lengths
+			if h.Cards[0].Rank() == rhs.Cards[0].Rank() {
+				return HandCompareEqual
+			} else {
+				if h.Cards[0].Rank() > rhs.Cards[0].Rank() {
+					return HandCompareGreater
+				} else {
+					return HandCompareLess
+				}
+			}
+		}
+	}
+}
+
+// String ify
+func (h Hand) String() string {
+	str := primalStringMap[h.Primal()]
+	if h.Kicker() != HandKickerNone {
+		str += " " + kickerStringMap[h.Kicker()]
+	}
+	if h.IsChain() {
+		str += " " + "chain"
+	}
+
+	str += "\n" + h.Cards.String()
+
+	return str
 }
