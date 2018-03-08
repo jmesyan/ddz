@@ -10,13 +10,13 @@ func TestNewHandContext(t *testing.T) {
 	cs := CardSet()
 	cs.Sort()
 	c1 := CardSlice{
-		Club6, Heart6, Spade6, Spade4,
+		Heart9, ClubT, HeartJ, SpadeQ, SpadeK,
 	}
 	h := HandParse(c1)
 	fmt.Println(h)
-	cs = cs.RemoveRank(Rank6)
+	//cs = cs.RemoveRank(Rank6)
 	ctx := NewHandContext(cs)
-	beat := ctx.searchTrioKicker(h, 1)
+	beat := ctx.searchChain(h, 1)
 	fmt.Println(beat)
 	//type args struct {
 	//	cs CardSlice

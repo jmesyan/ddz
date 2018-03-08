@@ -174,3 +174,51 @@ func (ctx *HandContext) searchTrioKicker(toBeat *Hand, kickerNum int) *Hand {
 
 	return nil
 }
+
+func (ctx *HandContext) searchChain(toBeat *Hand, duplicate int) *Hand {
+	chainLen := len(toBeat.Cards) / duplicate
+
+	// this is ugly, but it seems to be the best way to iterate ranks
+	rankLen := Rank(chainLen * int(RankInc))
+	footer := toBeat.Cards[0].Rank()
+	temp := CardSlice{}
+	var found bool
+
+	// search for chain in rank count
+	for i := footer + RankInc; i <= Rank2-rankLen; i += RankInc {
+		found = true
+		for j := Rank(0); j < rankLen; j += RankInc {
+			// check if chain breaks
+			if ctx.ranks.Count(i+j) < duplicate {
+				found = false
+				break
+			}
+		}
+
+		if found {
+			footer = i     // beat footer rank
+			k := duplicate // how many cards needed for each rank
+			for i := 0; i < len(ctx.cards) && chainLen > 0; i++ {
+				if ctx.cards[i].Rank() == footer {
+					temp = append(temp, ctx.cards[i])
+					k--
+					if k == 0 {
+						k = duplicate
+						chainLen--
+						footer += RankInc
+					}
+				}
+			}
+			break
+		}
+	}
+
+	if found {
+		return &Hand{
+			Type:  toBeat.Type,
+			Cards: temp,
+		}
+	}
+
+	return nil
+}

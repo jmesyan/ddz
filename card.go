@@ -9,21 +9,22 @@ import (
 )
 
 const (
-	Rank3 Rank = 0x000000100
-	Rank4 Rank = 0x000000200
-	Rank5 Rank = 0x000000300
-	Rank6 Rank = 0x000000400
-	Rank7 Rank = 0x000000500
-	Rank8 Rank = 0x000000600
-	Rank9 Rank = 0x000000700
-	RankT Rank = 0x000000800
-	RankJ Rank = 0x000000900
-	RankQ Rank = 0x000000A00
-	RankK Rank = 0x000000B00
-	RankA Rank = 0x000000C00
-	Rank2 Rank = 0x000000D00
-	Rankr Rank = 0x000000E00
-	RankR Rank = 0x000000F00
+	Rank3   Rank = 0x000000100
+	Rank4   Rank = 0x000000200
+	Rank5   Rank = 0x000000300
+	Rank6   Rank = 0x000000400
+	Rank7   Rank = 0x000000500
+	Rank8   Rank = 0x000000600
+	Rank9   Rank = 0x000000700
+	RankT   Rank = 0x000000800
+	RankJ   Rank = 0x000000900
+	RankQ   Rank = 0x000000A00
+	RankK   Rank = 0x000000B00
+	RankA   Rank = 0x000000C00
+	Rank2   Rank = 0x000000D00
+	Rankr   Rank = 0x000000E00
+	RankR   Rank = 0x000000F00
+	RankInc Rank = 0x000000100
 
 	RankNumber = 15
 )
@@ -576,7 +577,7 @@ func (rc RankCount) IsChain(duplicate, expectLength int) bool {
 	marker := 0
 	length := 0
 	// joker and 2 cannot chained up
-	for i := Rank3; i < Rank2; i += 0x100 {
+	for i := Rank3; i <= Rank2; i += RankInc {
 		// found first match
 		if rc.Count(i) == duplicate && marker == 0 {
 			marker = int(i)
@@ -584,8 +585,8 @@ func (rc RankCount) IsChain(duplicate, expectLength int) bool {
 		}
 
 		// matches end
-		if rc.Count(i) != duplicate && marker != 0 {
-			length = (int(i) - marker) / 0x100
+		if rc.Count(i) != duplicate && marker != 0 || i == Rank2 {
+			length = (int(i) - marker) / int(RankInc)
 			break
 		}
 	}
