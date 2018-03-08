@@ -29,10 +29,10 @@ const (
 )
 
 const (
-	SuitClub    Suit = 0x00008000
-	SuitDiamond Suit = 0x00004000
-	SuitHeart   Suit = 0x00002000
 	SuitSpade   Suit = 0x00001000
+	SuitHeart   Suit = 0x00002000
+	SuitDiamond Suit = 0x00004000
+	SuitClub    Suit = 0x00008000
 )
 
 const (
@@ -395,10 +395,10 @@ func (cs CardSlice) String() string {
 	return str
 }
 
-// Sort cards from Joker to 3
+// Sort cards in ascending order
 func (cs CardSlice) Sort() CardSlice {
 	sort.Slice(cs, func(i, j int) bool {
-		return cs[i] > cs[j]
+		return cs[i] < cs[j]
 	})
 
 	return cs
@@ -443,17 +443,6 @@ func (cs CardSlice) Subtract(rhs CardSlice) CardSlice {
 	return n
 }
 
-// Find position of card in card slice
-func (cs CardSlice) Find(c Card) int {
-	for i, v := range cs {
-		if v == c {
-			return i
-		}
-	}
-
-	return -1
-}
-
 // CopyRank cards with rank from slice
 func (cs CardSlice) CopyRank(r Rank) CardSlice {
 	ret := CardSlice{}
@@ -490,6 +479,55 @@ func (cs CardSlice) Ranks() RankCount {
 	rc := RankCount{}
 	rc.Update(cs)
 	return rc
+}
+
+// Search return position of card
+// cs must be sorted
+// if c is not existed, a position of c might appear in cs will be returned
+//
+func (cs CardSlice) search(c Card, f func(int) bool) int {
+	i, j := 0, len(cs)
+	for i < j {
+		h := int(uint(i+j) >> 1)
+		if !f(h) {
+			i = h + 1
+		} else {
+			j = h
+		}
+	}
+	return i
+}
+
+// Search card c in card slice cs, cs must be sorted
+func (cs CardSlice) Search(c Card, ascend bool) int {
+	if ascend {
+		return cs.search(c, func(i int) bool {
+			return cs[i] >= c
+		})
+	} else {
+		return cs.search(c, func(i int) bool {
+			return cs[i] <= c
+		})
+	}
+}
+
+// Contains returns true if card slice contains another
+// cs must be sorted, rhs can be unsorted
+//
+func (cs CardSlice) Contains(rhs CardSlice, ascend bool) bool {
+	length := len(rhs)
+	if len(cs) < length {
+		return false
+	}
+
+	for _, r := range rhs {
+		i := cs.Search(r, ascend)
+		if i < len(cs) && cs[i] == r {
+			length--
+		}
+	}
+
+	return length == 0
 }
 
 // Count returns how many cards are there in slice with rank
@@ -538,16 +576,16 @@ func (rc RankCount) IsChain(duplicate, expectLength int) bool {
 	marker := 0
 	length := 0
 	// joker and 2 cannot chained up
-	for i := Rank3; i < Rank2; i++ {
+	for i := Rank3; i < Rank2; i += 0x100 {
 		// found first match
-		if rc[i] == duplicate && marker == 0 {
+		if rc.Count(i) == duplicate && marker == 0 {
 			marker = int(i)
 			continue
 		}
 
 		// matches end
-		if rc[i] != duplicate && marker != 0 {
-			length = int(i) - marker
+		if rc.Count(i) != duplicate && marker != 0 {
+			length = (int(i) - marker) / 0x100
 			break
 		}
 	}

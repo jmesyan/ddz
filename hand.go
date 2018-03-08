@@ -33,6 +33,7 @@ package ddz
 
 // Hand is a valid card set that can play.
 // cards format must be like 12345/112233/1112223344/11122234 etc
+//
 type Hand struct {
 	Type  byte      // hand type
 	Cards CardSlice // cards
@@ -69,7 +70,7 @@ const (
 	HandNone       byte = 0x00
 	HandSearchMask byte = 0xFF
 
-	handPatternNone = 0  // place holder
+	handPatternNone = 0
 	handPattern1    = 1  // 1, solo
 	handPattern2a   = 2  // 2, pair
 	handPattern2b   = 3  // 2, nuke
@@ -330,7 +331,7 @@ func (h *Hand) checkNuke(cs CardSlice) bool {
 	h.Type = HandNone
 	if len(cs) == 2 && cs[0].Rank() == RankR && cs[1].Rank() == Rankr {
 		h.Type = HandPrimalNuke | HandKickerNone | HandChainless
-		copy(h.Cards, cs)
+		h.Cards = cs.Copy()
 	}
 
 	return h.IsNuke()
@@ -341,12 +342,13 @@ func (h *Hand) checkBomb(cs CardSlice, sorted RankCount) bool {
 	if len(cs) == 4 && isPatternMatch(sorted, handPattern4a) {
 		// bomb, 4
 		h.Type = HandPrimalBomb | HandKickerNone | HandChainless
-		copy(h.Cards, cs)
+		h.Cards = cs.Copy()
 	}
 
 	return h.IsBomb()
 }
 
+// HandParse returns hand if the card slice can form a valid hand
 func HandParse(cs CardSlice) *Hand {
 	if len(cs) < HandMinLength || len(cs) > HandMaxLength {
 		return nil
@@ -384,7 +386,7 @@ func HandParse(cs CardSlice) *Hand {
 		dup := int(i)
 		if cardLen >= chainMinLen && cardLen%dup == 0 && rc.IsChain(dup, cardLen/dup) {
 			hand.Type = i | HandKickerNone | HandChain
-			copy(hand.Cards, cs)
+			hand.Cards = cs.Copy()
 			break
 		}
 	}
