@@ -42,6 +42,7 @@ type Hand struct {
 // HandCompareResult represent the compare result between hands
 type HandCompareResult int
 
+// card slice length of different hand types
 const (
 	HandMinLength          = 1
 	HandMaxLength          = 20
@@ -49,7 +50,10 @@ const (
 	HandPairChainMinLength = 6
 	HandTrioChainMinLength = 6
 	HandFourChainMinLength = 8
+)
 
+// hand type masks
+const (
 	HandPrimalNone byte = 0x00
 	HandPrimalNuke byte = 0x06
 	HandPrimalBomb byte = 0x05
@@ -69,7 +73,10 @@ const (
 
 	HandNone       byte = 0x00
 	HandSearchMask byte = 0xFF
+)
 
+// hand patterns
+const (
 	handPatternNone = 0
 	handPattern1    = 1  // 1, solo
 	handPattern2a   = 2  // 2, pair
@@ -118,7 +125,10 @@ const (
 	patternLength = 12 // 3~A
 	handVariation = 2  // except chains, hands with same length will have 2 variation at most
 	handSpecNum   = 4  // pattern, primal, kicker, chain
+)
 
+// hand compare
+const (
 	HandCompareIllegal = -2
 	HandCompareLess    = -1
 	HandCompareEqual   = 0
@@ -420,54 +430,58 @@ func HandParse(cs CardSlice) *Hand {
 
 // compare between hands, one of the hands must be bomb or nuke
 func (h Hand) compareBomb(rhs Hand) HandCompareResult {
+	var result HandCompareResult
 	if h.Type == rhs.Type && h.Cards[0].Rank() == rhs.Cards[0].Rank() {
 		// same type same ranks, equal
-		return HandCompareEqual
+		result = HandCompareEqual
 	} else if h.Type == HandPrimalBomb && rhs.Type == HandPrimalBomb {
 		// both are bombs, compare by card ranks
 		if h.Cards[0].Rank() > rhs.Cards[0].Rank() {
-			return HandCompareGreater
+			result = HandCompareGreater
 		} else {
-			return HandCompareLess
+			result = HandCompareLess
 		}
 	} else {
 		// nuke > bomb
 		if h.Primal() > rhs.Primal() {
-			return HandCompareGreater
+			result = HandCompareGreater
 		} else {
-			return HandCompareLess
+			result = HandCompareLess
 		}
 	}
+	return result
 }
 
 // Compare between hands
 // hands must be same type unless there are bombs or nukes
 func (h Hand) Compare(rhs Hand) HandCompareResult {
+	var result HandCompareResult
 	if h.Type != rhs.Type {
 		// different types, check for bombs or nukes
 		if !h.IsBomb() && !h.IsNuke() && !rhs.IsBomb() && !rhs.IsNuke() {
-			return HandCompareIllegal
+			result = HandCompareIllegal
 		} else {
-			return h.compareBomb(rhs)
+			result = h.compareBomb(rhs)
 		}
 	} else {
 		// same types and not bombs or nukes
 		if len(h.Cards) != len(rhs.Cards) {
 			// different lengths
-			return HandCompareIllegal
+			result = HandCompareIllegal
 		} else {
 			// same types and same lengths
 			if h.Cards[0].Rank() == rhs.Cards[0].Rank() {
-				return HandCompareEqual
+				result = HandCompareEqual
 			} else {
 				if h.Cards[0].Rank() > rhs.Cards[0].Rank() {
-					return HandCompareGreater
+					result = HandCompareGreater
 				} else {
-					return HandCompareLess
+					result = HandCompareLess
 				}
 			}
 		}
 	}
+	return result
 }
 
 // String ify

@@ -1,13 +1,16 @@
 package ddz
 
+// HandList wrapper for hand slice
 type HandList []Hand
 
+// HandContext context of beat search
 type HandContext struct {
 	ranks    RankCount
 	cards    CardSlice
 	reversed CardSlice
 }
 
+// NewHandContext returns new hand context from card slice
 func NewHandContext(cs CardSlice) *HandContext {
 	ctx := HandContext{}
 	ctx.Update(cs)
@@ -23,24 +26,23 @@ func (ctx *HandContext) Update(cs CardSlice) *HandContext {
 }
 
 func (ctx *HandContext) searchPrimal(toBeat *Hand, primalNum int) *Hand {
+	var beat *Hand
 	rank := toBeat.Cards[0].Rank()
-
 	// search for primal, from low to high rank
 	for i := 0; i < len(ctx.cards); {
 		v := ctx.cards[i]
 		num := ctx.ranks.Count(v.Rank())
 		if v.Rank() > rank && num >= primalNum {
-			beat := &Hand{}
+			beat = &Hand{}
 			beat.Type = toBeat.Type
 			beat.Cards = make(CardSlice, primalNum)
 			copy(beat.Cards, ctx.cards[i:i+primalNum])
-			return beat
-		} else {
-			i += num
+			break
 		}
+		i += num
 	}
 
-	return nil
+	return beat
 }
 
 func (ctx *HandContext) searchBomb(toBeat *Hand) *Hand {
@@ -218,6 +220,33 @@ func (ctx *HandContext) searchChain(toBeat *Hand, duplicate int) *Hand {
 			Type:  toBeat.Type,
 			Cards: temp,
 		}
+	}
+
+	return nil
+}
+
+func (ctx *HandContext) searchTrioKickerChain(toBeat *Hand, kc int) *Hand {
+	chainLen := len(toBeat.Cards) / (3 + kc)
+	hTrio := &Hand{
+		Cards: toBeat.Cards[0 : 3*chainLen],
+		Type:  HandPrimalTrio | HandKickerNone | HandChain,
+	}
+	hKick := &Hand{
+		Cards: toBeat.Cards[3*chainLen : 3*chainLen+kc*chainLen],
+	}
+
+	// self beat
+	temp := ctx.reversed.Copy()
+	if temp.Contains(hTrio.Cards, false) {
+		n := 0
+		kickCount := ctx.ranks.Copy()
+		// remove trio from kick count
+		for i := 0; i < len(hTrio.Cards); i += 3 {
+			kickCount[hTrio.Cards[i].Rank()] = 0
+		}
+
+		// remove count < kc and calculate n
+
 	}
 
 	return nil

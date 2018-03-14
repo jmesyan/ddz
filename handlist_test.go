@@ -1,40 +1,28 @@
 package ddz
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 )
 
 func TestNewHandContext(t *testing.T) {
-	cs := CardSet()
-	cs.Sort()
-	c1 := CardSlice{
-		Heart9, ClubT, HeartJ, SpadeQ, SpadeK,
+	type args struct {
+		cs CardSlice
 	}
-	h := HandParse(c1)
-	fmt.Println(h)
-	//cs = cs.RemoveRank(Rank6)
-	ctx := NewHandContext(cs)
-	beat := ctx.searchChain(h, 1)
-	fmt.Println(beat)
-	//type args struct {
-	//	cs CardSlice
-	//}
-	//tests := []struct {
-	//	name string
-	//	args args
-	//	want *HandContext
-	//}{
-	//	// TODO: Add test cases.
-	//}
-	//for _, tt := range tests {
-	//	t.Run(tt.name, func(t *testing.T) {
-	//		if got := NewHandContext(tt.args.cs); !reflect.DeepEqual(got, tt.want) {
-	//			t.Errorf("NewHandContext() = %v, want %v", got, tt.want)
-	//		}
-	//	})
-	//}
+	tests := []struct {
+		name string
+		args args
+		want *HandContext
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := NewHandContext(tt.args.cs); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewHandContext() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
 
 func TestHandContext_Update(t *testing.T) {
@@ -52,7 +40,7 @@ func TestHandContext_Update(t *testing.T) {
 		args   args
 		want   *HandContext
 	}{
-	// TODO: Add test cases.
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -63,6 +51,133 @@ func TestHandContext_Update(t *testing.T) {
 			}
 			if got := ctx.Update(tt.args.cs); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("HandContext.Update() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestHandContext_searchPrimal(t *testing.T) {
+	type fields struct {
+		ranks    RankCount
+		cards    CardSlice
+		reversed CardSlice
+	}
+	type args struct {
+		toBeat    *Hand
+		primalNum int
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   *Hand
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := &HandContext{
+				ranks:    tt.fields.ranks,
+				cards:    tt.fields.cards,
+				reversed: tt.fields.reversed,
+			}
+			if got := ctx.searchPrimal(tt.args.toBeat, tt.args.primalNum); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("HandContext.searchPrimal() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestHandContext_searchBomb(t *testing.T) {
+	type fields struct {
+		ranks    RankCount
+		cards    CardSlice
+		reversed CardSlice
+	}
+	type args struct {
+		toBeat *Hand
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   *Hand
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := &HandContext{
+				ranks:    tt.fields.ranks,
+				cards:    tt.fields.cards,
+				reversed: tt.fields.reversed,
+			}
+			if got := ctx.searchBomb(tt.args.toBeat); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("HandContext.searchBomb() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestHandContext_searchTrioKicker(t *testing.T) {
+	type fields struct {
+		ranks    RankCount
+		cards    CardSlice
+		reversed CardSlice
+	}
+	type args struct {
+		toBeat    *Hand
+		kickerNum int
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   *Hand
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := &HandContext{
+				ranks:    tt.fields.ranks,
+				cards:    tt.fields.cards,
+				reversed: tt.fields.reversed,
+			}
+			if got := ctx.searchTrioKicker(tt.args.toBeat, tt.args.kickerNum); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("HandContext.searchTrioKicker() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestHandContext_searchChain(t *testing.T) {
+	type fields struct {
+		ranks    RankCount
+		cards    CardSlice
+		reversed CardSlice
+	}
+	type args struct {
+		toBeat    *Hand
+		duplicate int
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   *Hand
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := &HandContext{
+				ranks:    tt.fields.ranks,
+				cards:    tt.fields.cards,
+				reversed: tt.fields.reversed,
+			}
+			if got := ctx.searchChain(tt.args.toBeat, tt.args.duplicate); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("HandContext.searchChain() = %v, want %v", got, tt.want)
 			}
 		})
 	}

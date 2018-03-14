@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// Ranks
 const (
 	Rank3   Rank = 0x000000100
 	Rank4   Rank = 0x000000200
@@ -29,6 +30,7 @@ const (
 	RankNumber = 15
 )
 
+// Suits
 const (
 	SuitSpade   Suit = 0x00001000
 	SuitHeart   Suit = 0x00002000
@@ -43,6 +45,7 @@ const (
 	maskBits  = 0xFFFF0000
 )
 
+// Primes
 const (
 	Prime3 = 0x00000002
 	Prime4 = 0x00000003
@@ -61,6 +64,7 @@ const (
 	PrimeR = 0x0000002F
 )
 
+// Bits
 const (
 	Bits3 = 0x00010000
 	Bits4 = 0x00020000
@@ -79,6 +83,7 @@ const (
 	BitsR = 0x40000000
 )
 
+// Card set
 const (
 	Club3    Card = 0x00018102
 	Club4    Card = 0x00028203
@@ -154,6 +159,7 @@ type Rank uint32
 type RankCount [RankNumber]int
 
 var (
+	// ErrorInvalidFormat error
 	ErrorInvalidFormat = errors.New("invalid card string format")
 	suitMap            map[Suit]string
 	rankMap            map[Rank]string
@@ -256,7 +262,7 @@ func (c Card) Suit() Suit {
 	return Suit(c & maskSuit)
 }
 
-// Suit returns card's bits part
+// Bits returns card's bits part
 func (c Card) Bits() uint32 {
 	return uint32(c & maskBits)
 }
@@ -288,7 +294,7 @@ func (c Card) String() string {
 }
 
 // MakeCard from bits|suit|rank|prime
-func CardMake(p, r, s, b uint32) Card {
+func MakeCard(p, r, s, b uint32) Card {
 	return Card(p | r | s | b)
 }
 
@@ -505,11 +511,10 @@ func (cs CardSlice) Search(c Card, ascend bool) int {
 		return cs.search(c, func(i int) bool {
 			return cs[i] >= c
 		})
-	} else {
-		return cs.search(c, func(i int) bool {
-			return cs[i] <= c
-		})
 	}
+	return cs.search(c, func(i int) bool {
+		return cs[i] <= c
+	})
 }
 
 // Contains returns true if card slice contains another

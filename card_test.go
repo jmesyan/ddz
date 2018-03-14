@@ -157,8 +157,8 @@ func TestCardMake(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := CardMake(tt.args.p, tt.args.r, tt.args.s, tt.args.b); got != tt.want {
-				t.Errorf("CardMake() = %v, want %v", got, tt.want)
+			if got := MakeCard(tt.args.p, tt.args.r, tt.args.s, tt.args.b); got != tt.want {
+				t.Errorf("MakeCard() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -393,6 +393,72 @@ func TestCardSlice_Ranks(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.cs.Ranks(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("CardSlice.Ranks() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCardSlice_search(t *testing.T) {
+	type args struct {
+		c Card
+		f func(int) bool
+	}
+	tests := []struct {
+		name string
+		cs   CardSlice
+		args args
+		want int
+	}{
+	// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.cs.search(tt.args.c, tt.args.f); got != tt.want {
+				t.Errorf("CardSlice.search() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCardSlice_Search(t *testing.T) {
+	type args struct {
+		c      Card
+		ascend bool
+	}
+	tests := []struct {
+		name string
+		cs   CardSlice
+		args args
+		want int
+	}{
+	// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.cs.Search(tt.args.c, tt.args.ascend); got != tt.want {
+				t.Errorf("CardSlice.Search() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCardSlice_Contains(t *testing.T) {
+	type args struct {
+		rhs    CardSlice
+		ascend bool
+	}
+	tests := []struct {
+		name string
+		cs   CardSlice
+		args args
+		want bool
+	}{
+	// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.cs.Contains(tt.args.rhs, tt.args.ascend); got != tt.want {
+				t.Errorf("CardSlice.Contains() = %v, want %v", got, tt.want)
 			}
 		})
 	}
