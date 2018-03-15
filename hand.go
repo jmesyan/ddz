@@ -323,7 +323,7 @@ func isPatternMatch(sorted RankCount, pattern int) bool {
 func (h *Hand) distribute(cs CardSlice, rc RankCount, d1, d2, length int) {
 	temp := CardSlice{}
 	for _, card := range cs {
-		num := rc.Count(card.Rank())
+		num := rc[card.Rank()]
 		if num == d1 {
 			h.Cards = append(h.Cards, card)
 		} else if num == d2 {

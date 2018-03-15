@@ -10,150 +10,108 @@ import (
 
 // Ranks
 const (
-	Rank3   Rank = 0x000000100
-	Rank4   Rank = 0x000000200
-	Rank5   Rank = 0x000000300
-	Rank6   Rank = 0x000000400
-	Rank7   Rank = 0x000000500
-	Rank8   Rank = 0x000000600
-	Rank9   Rank = 0x000000700
-	RankT   Rank = 0x000000800
-	RankJ   Rank = 0x000000900
-	RankQ   Rank = 0x000000A00
-	RankK   Rank = 0x000000B00
-	RankA   Rank = 0x000000C00
-	Rank2   Rank = 0x000000D00
-	Rankr   Rank = 0x000000E00
-	RankR   Rank = 0x000000F00
-	RankInc Rank = 0x000000100
+	Rank3   Rank = 0x01
+	Rank4   Rank = 0x02
+	Rank5   Rank = 0x03
+	Rank6   Rank = 0x04
+	Rank7   Rank = 0x05
+	Rank8   Rank = 0x06
+	Rank9   Rank = 0x07
+	RankT   Rank = 0x08
+	RankJ   Rank = 0x09
+	RankQ   Rank = 0x0A
+	RankK   Rank = 0x0B
+	RankA   Rank = 0x0C
+	Rank2   Rank = 0x0D
+	Rankr   Rank = 0x0E
+	RankR   Rank = 0x0F
+	RankInc Rank = 0x01
 
 	RankNumber = 15
 )
 
 // Suits
 const (
-	SuitSpade   Suit = 0x00001000
-	SuitHeart   Suit = 0x00002000
-	SuitDiamond Suit = 0x00004000
-	SuitClub    Suit = 0x00008000
+	SuitSpade   Suit = 0x10
+	SuitHeart   Suit = 0x20
+	SuitDiamond Suit = 0x40
+	SuitClub    Suit = 0x80
 )
 
 const (
-	maskPrime = 0x000000FF
-	maskRank  = 0x00000F00
-	maskSuit  = 0x0000F000
-	maskBits  = 0xFFFF0000
-)
-
-// Primes
-const (
-	Prime3 = 0x00000002
-	Prime4 = 0x00000003
-	Prime5 = 0x00000005
-	Prime6 = 0x00000007
-	Prime7 = 0x0000000B
-	Prime8 = 0x0000000D
-	Prime9 = 0x00000011
-	PrimeT = 0x00000013
-	PrimeJ = 0x00000017
-	PrimeQ = 0x0000001D
-	PrimeK = 0x0000001F
-	PrimeA = 0x00000025
-	Prime2 = 0x00000029
-	Primer = 0x0000002B
-	PrimeR = 0x0000002F
-)
-
-// Bits
-const (
-	Bits3 = 0x00010000
-	Bits4 = 0x00020000
-	Bits5 = 0x00040000
-	Bits6 = 0x00080000
-	Bits7 = 0x00100000
-	Bits8 = 0x00200000
-	Bits9 = 0x00400000
-	BitsT = 0x00800000
-	BitsJ = 0x01000000
-	BitsQ = 0x02000000
-	BitsK = 0x04000000
-	BitsA = 0x08000000
-	Bits2 = 0x10000000
-	Bitsr = 0x20000000
-	BitsR = 0x40000000
+	maskRank = 0x0F
+	maskSuit = 0xF0
 )
 
 // Card set
 const (
-	Club3    Card = 0x00018102
-	Club4    Card = 0x00028203
-	Club5    Card = 0x00048305
-	Club6    Card = 0x00088407
-	Club7    Card = 0x0010850B
-	Club8    Card = 0x0020860D
-	Club9    Card = 0x00408711
-	ClubT    Card = 0x00808813
-	ClubJ    Card = 0x01008917
-	ClubQ    Card = 0x02008A1D
-	ClubK    Card = 0x04008B1F
-	ClubA    Card = 0x08008C25
-	Club2    Card = 0x10008D29
-	Diamond3 Card = 0x00014102
-	Diamond4 Card = 0x00024203
-	Diamond5 Card = 0x00044305
-	Diamond6 Card = 0x00084407
-	Diamond7 Card = 0x0010450B
-	Diamond8 Card = 0x0020460D
-	Diamond9 Card = 0x00404711
-	DiamondT Card = 0x00804813
-	DiamondJ Card = 0x01004917
-	DiamondQ Card = 0x02004A1D
-	DiamondK Card = 0x04004B1F
-	DiamondA Card = 0x08004C25
-	Diamond2 Card = 0x10004D29
-	Heart3   Card = 0x00012102
-	Heart4   Card = 0x00022203
-	Heart5   Card = 0x00042305
-	Heart6   Card = 0x00082407
-	Heart7   Card = 0x0010250B
-	Heart8   Card = 0x0020260D
-	Heart9   Card = 0x00402711
-	HeartT   Card = 0x00802813
-	HeartJ   Card = 0x01002917
-	HeartQ   Card = 0x02002A1D
-	HeartK   Card = 0x04002B1F
-	HeartA   Card = 0x08002C25
-	Heart2   Card = 0x10002D29
-	Spade3   Card = 0x00011102
-	Spade4   Card = 0x00021203
-	Spade5   Card = 0x00041305
-	Spade6   Card = 0x00081407
-	Spade7   Card = 0x0010150B
-	Spade8   Card = 0x0020160D
-	Spade9   Card = 0x00401711
-	SpadeT   Card = 0x00801813
-	SpadeJ   Card = 0x01001917
-	SpadeQ   Card = 0x02001A1D
-	SpadeK   Card = 0x04001B1F
-	SpadeA   Card = 0x08001C25
-	Spade2   Card = 0x10001D29
-	Jokerr   Card = 0x20008E2B
-	JokerR   Card = 0x40004F2F
+	Club3    Card = 0x11
+	Club4    Card = 0x12
+	Club5    Card = 0x13
+	Club6    Card = 0x14
+	Club7    Card = 0x15
+	Club8    Card = 0x16
+	Club9    Card = 0x17
+	ClubT    Card = 0x18
+	ClubJ    Card = 0x19
+	ClubQ    Card = 0x1A
+	ClubK    Card = 0x1B
+	ClubA    Card = 0x1C
+	Club2    Card = 0x1D
+	Diamond3 Card = 0x21
+	Diamond4 Card = 0x22
+	Diamond5 Card = 0x23
+	Diamond6 Card = 0x24
+	Diamond7 Card = 0x25
+	Diamond8 Card = 0x26
+	Diamond9 Card = 0x27
+	DiamondT Card = 0x28
+	DiamondJ Card = 0x29
+	DiamondQ Card = 0x2A
+	DiamondK Card = 0x2B
+	DiamondA Card = 0x2C
+	Diamond2 Card = 0x2D
+	Heart3   Card = 0x41
+	Heart4   Card = 0x42
+	Heart5   Card = 0x43
+	Heart6   Card = 0x44
+	Heart7   Card = 0x45
+	Heart8   Card = 0x46
+	Heart9   Card = 0x47
+	HeartT   Card = 0x48
+	HeartJ   Card = 0x49
+	HeartQ   Card = 0x4A
+	HeartK   Card = 0x4B
+	HeartA   Card = 0x4C
+	Heart2   Card = 0x4D
+	Spade3   Card = 0x81
+	Spade4   Card = 0x82
+	Spade5   Card = 0x83
+	Spade6   Card = 0x84
+	Spade7   Card = 0x85
+	Spade8   Card = 0x86
+	Spade9   Card = 0x87
+	SpadeT   Card = 0x88
+	SpadeJ   Card = 0x89
+	SpadeQ   Card = 0x8A
+	SpadeK   Card = 0x8B
+	SpadeA   Card = 0x8C
+	Spade2   Card = 0x8D
+	Jokerr   Card = 0x1E
+	JokerR   Card = 0x2F
 )
 
-// Card represent card with uint32 number
-// xbbbbbbb|bbbbbbbb|cdhsrrrr|xxpppppp
-// p: prime number (duce=2, trey=3, ace=41)
-// r: rank (duce=0, trey=1, ace=12)
-// cdhs: suits (c=club, d=diamond, h=heart, s=spade)
-// b: rank bitmask
-type Card uint32
+// Card represent card with a byte
+// |cdhs|rrrr|
+// r: rank bits
+// cdhs: suit bits (c=club, d=diamond, h=heart, s=spade)
+type Card uint8
 
-// Suit represent card's suit with uint32 number
-type Suit uint32
+// Suit represent card's suit with a byte
+type Suit uint8
 
-// Rank represent card's rank with a uint32 number
-type Rank uint32
+// Rank represent card's rank with a byte
+type Rank uint8
 
 // RankCount holds ranks counts in card slice
 type RankCount [RankNumber]int
@@ -247,11 +205,6 @@ func init() {
 	cardMap["♦R"] = JokerR
 }
 
-// Prime returns card's prime bits
-func (c Card) Prime() uint32 {
-	return uint32(c & maskPrime)
-}
-
 // Rank returns card's rank bits
 func (c Card) Rank() Rank {
 	return Rank(c & maskRank)
@@ -260,11 +213,6 @@ func (c Card) Rank() Rank {
 // Suit returns card's suit bits
 func (c Card) Suit() Suit {
 	return Suit(c & maskSuit)
-}
-
-// Bits returns card's bits part
-func (c Card) Bits() uint32 {
-	return uint32(c & maskBits)
 }
 
 // IsBlack true if card's suit is club or spade
@@ -294,8 +242,8 @@ func (c Card) String() string {
 }
 
 // MakeCard from bits|suit|rank|prime
-func MakeCard(p, r, s, b uint32) Card {
-	return Card(p | r | s | b)
+func MakeCard(suit Suit, rank Rank) Card {
+	return Card(uint8(suit) | uint8(rank))
 }
 
 // CardFromString parse string to card
@@ -536,11 +484,6 @@ func (cs CardSlice) Contains(rhs CardSlice, ascend bool) bool {
 	return length == 0
 }
 
-// Count returns how many cards are there in slice with rank
-func (rc RankCount) Count(r Rank) int {
-	return rc[r>>8-1]
-}
-
 // Copy returns a copy of rank count
 func (rc RankCount) Copy() RankCount {
 	n := RankCount{}
@@ -551,7 +494,7 @@ func (rc RankCount) Copy() RankCount {
 // Update count ranks in card slice
 func (rc *RankCount) Update(cs CardSlice) {
 	for _, v := range cs {
-		rc[v.Rank()>>8-1]++
+		rc[v.Rank()]++
 	}
 }
 
@@ -584,13 +527,13 @@ func (rc RankCount) IsChain(duplicate, expectLength int) bool {
 	// joker and 2 cannot chained up
 	for i := Rank3; i <= Rank2; i += RankInc {
 		// found first match
-		if rc.Count(i) == duplicate && marker == 0 {
+		if rc[i] == duplicate && marker == 0 {
 			marker = int(i)
 			continue
 		}
 
 		// matches end
-		if rc.Count(i) != duplicate && marker != 0 || i == Rank2 {
+		if rc[i] != duplicate && marker != 0 || i == Rank2 {
 			length = (int(i) - marker) / int(RankInc)
 			break
 		}

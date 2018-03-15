@@ -31,7 +31,7 @@ func (ctx *HandContext) searchPrimal(toBeat *Hand, primalNum int) *Hand {
 	// search for primal, from low to high rank
 	for i := 0; i < len(ctx.cards); {
 		v := ctx.cards[i]
-		num := ctx.ranks.Count(v.Rank())
+		num := ctx.ranks[v.Rank()]
 		if v.Rank() > rank && num >= primalNum {
 			beat = &Hand{}
 			beat.Type = toBeat.Type
@@ -74,7 +74,7 @@ func (ctx *HandContext) searchBomb(toBeat *Hand) *Hand {
 
 	// search for nuke
 	if beat == nil {
-		if ctx.ranks.Count(Rankr) != 0 && ctx.ranks.Count(RankR) != 0 {
+		if ctx.ranks[Rankr] != 0 && ctx.ranks[RankR] != 0 {
 			beat = &Hand{
 				Type:  HandPrimalNuke,
 				Cards: CardSlice{JokerR, Jokerr},
@@ -121,7 +121,7 @@ func (ctx *HandContext) searchTrioKicker(toBeat *Hand, kickerNum int) *Hand {
 		// round 1: only search those count[rank] == kick
 		for i := 0; i < len(temp); {
 			v := temp[i]
-			num := ctx.ranks.Count(v.Rank())
+			num := ctx.ranks[v.Rank()]
 			if num >= kickerNum && v.Rank() > hKick.Cards[0].Rank() {
 				hKickBeat.Cards = append(hKickBeat.Cards, temp[i:i+kickerNum]...)
 				canBeat = true
@@ -150,7 +150,7 @@ func (ctx *HandContext) searchTrioKicker(toBeat *Hand, kickerNum int) *Hand {
 			// search for a kicker
 			for i := 0; i < len(temp); {
 				v := temp[i]
-				num := ctx.ranks.Count(v.Rank())
+				num := ctx.ranks[v.Rank()]
 				if num >= kickerNum {
 					hKickBeat.Cards = append(hKickBeat.Cards, temp[i:i+kickerNum]...)
 					canBeat = true
@@ -191,7 +191,7 @@ func (ctx *HandContext) searchChain(toBeat *Hand, duplicate int) *Hand {
 		found = true
 		for j := Rank(0); j < rankLen; j += RankInc {
 			// check if chain breaks
-			if ctx.ranks.Count(i+j) < duplicate {
+			if ctx.ranks[i+j] < duplicate {
 				found = false
 				break
 			}
@@ -225,15 +225,55 @@ func (ctx *HandContext) searchChain(toBeat *Hand, duplicate int) *Hand {
 	return nil
 }
 
+// https://compprog.wordpress.com/2007/10/17/generating-combinations-1/
+// next_comb(int comb[], int k, int n)
+// Generates the next combination of n elements as k after comb
+//
+// comb => the previous combination ( use (0, 1, 2, ..., k) for first)
+// k => the size of the subsets to generate
+// n => the size of the original set
+//
+// Returns: 1 if a valid combination was found
+// 0, otherwise
+func nextComb(comb []int, k, n int) bool {
+	i := k - 1
+	comb[i]++
+	for i > 0 && comb[i] >= n-k+1+i {
+		i--
+		comb[i]++
+	}
+	if comb[0] > n-k {
+		// Combination (n-k, n-k+1, ..., n) reached
+		// No more combinations can be generated
+		return false
+	}
+
+	// comb now looks like (..., x, n, n, n, ..., n).
+	// Turn it into (..., x, x + 1, x + 2, ...)
+	for i = i + 1; i < k; i++ {
+		comb[i] = comb[i-1] + 1
+	}
+
+	return true
+}
+
 func (ctx *HandContext) searchTrioKickerChain(toBeat *Hand, kc int) *Hand {
 	chainLen := len(toBeat.Cards) / (3 + kc)
 	hTrio := &Hand{
 		Cards: toBeat.Cards[0 : 3*chainLen],
 		Type:  HandPrimalTrio | HandKickerNone | HandChain,
 	}
+	hTrioBeat := &Hand{
+		Cards: make(CardSlice, 0),
+	}
 	hKick := &Hand{
 		Cards: toBeat.Cards[3*chainLen : 3*chainLen+kc*chainLen],
 	}
+	hKickBeat := &Hand{
+		Cards: make(CardSlice, 0),
+	}
+
+	canBeat := false
 
 	// self beat
 	temp := ctx.reversed.Copy()
@@ -245,8 +285,88 @@ func (ctx *HandContext) searchTrioKickerChain(toBeat *Hand, kc int) *Hand {
 			kickCount[hTrio.Cards[i].Rank()] = 0
 		}
 
+		comb2rank := make([]int, RankNumber)
+		rank2comb := make([]int, RankNumber)
+		j := 0
 		// remove count < kc and calculate n
+		for i := Rank3; i < Rank2; i += RankInc {
+			if kickCount[i] < kc {
+				kickCount[i] = 0
+			} else {
+				n++
 
+				// combination index to rank, and vice versa
+				//
+				// ranks count [x,0,x,0 ...] might have zeros between available ranks
+				// which can not apply next_comb directly
+				// use a comb-to-rank map to compress rank count array
+				comb2rank[j] = int(i)
+				rank2comb[i] = j
+				j++
+			}
+		}
+
+		// combination
+		comb := make([]int, RankNumber)
+		for i := 0; i < len(hKick.Cards); i += kc {
+			comb[j] = rank2comb[hKick.Cards[i].Rank()]
+			j++
+		}
+
+		// find next combination
+		if nextComb(comb, chainLen, n) {
+			for i := 0; i < chainLen; i++ {
+				rank := comb2rank[i]
+				for j := 0; j < len(temp); j++ {
+					if temp[j].Rank() == Rank(rank) {
+						hKickBeat.Cards = append(hKickBeat.Cards, temp[j:j+kc]...)
+						break
+					}
+				}
+			}
+			canBeat = true
+			// copy trio to beat
+			hTrioBeat.Cards = append(hTrioBeat.Cards, hTrio.Cards...)
+			hKickBeat.Cards.Sort()
+		}
+	}
+
+	// cannot find same rank trio chain, search for higher rank trio
+	if !canBeat {
+		hTrioBeat = ctx.searchChain(hTrio, 3)
+		if hTrioBeat != nil {
+			// higher rank trio chain found, search for kickers
+			count := ctx.ranks.Copy()
+			// remove trio from rank count
+			for i := 0; i < len(hTrioBeat.Cards); i += 3 {
+				temp = temp.RemoveRank(hTrioBeat.Cards[i].Rank())
+				count[hTrioBeat.Cards[i].Rank()] = 0
+			}
+
+			for i := 0; i < chainLen; i++ {
+				for j := 0; j < len(temp); j++ {
+					if count[temp[i].Rank()] >= kc {
+						hKickBeat.Cards = append(hKickBeat.Cards, temp[i:i+kc]...)
+						temp = temp.RemoveRank(temp[i].Rank())
+						break
+					}
+				}
+			}
+
+			if len(hKickBeat.Cards) == chainLen*kc {
+				canBeat = true
+			}
+		}
+	}
+
+	// final
+	if canBeat {
+		beat := &Hand{
+			Cards: hTrioBeat.Cards.Copy(),
+			Type:  toBeat.Type,
+		}
+		beat.Cards = append(beat.Cards, hKickBeat.Cards...)
+		return beat
 	}
 
 	return nil

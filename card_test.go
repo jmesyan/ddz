@@ -5,30 +5,13 @@ import (
 	"testing"
 )
 
-func TestCard_Prime(t *testing.T) {
-	tests := []struct {
-		name string
-		c    Card
-		want uint32
-	}{
-	// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.c.Prime(); got != tt.want {
-				t.Errorf("Card.Prime() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestCard_Rank(t *testing.T) {
 	tests := []struct {
 		name string
 		c    Card
 		want Rank
 	}{
-	// TODO: Add test cases.
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -45,29 +28,12 @@ func TestCard_Suit(t *testing.T) {
 		c    Card
 		want Suit
 	}{
-	// TODO: Add test cases.
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.c.Suit(); got != tt.want {
 				t.Errorf("Card.Suit() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestCard_Bits(t *testing.T) {
-	tests := []struct {
-		name string
-		c    Card
-		want uint32
-	}{
-	// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.c.Bits(); got != tt.want {
-				t.Errorf("Card.Bits() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -79,7 +45,7 @@ func TestCard_IsBlack(t *testing.T) {
 		c    Card
 		want bool
 	}{
-	// TODO: Add test cases.
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -96,7 +62,7 @@ func TestCard_IsRed(t *testing.T) {
 		c    Card
 		want bool
 	}{
-	// TODO: Add test cases.
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -113,7 +79,7 @@ func TestCard_IsJoker(t *testing.T) {
 		c    Card
 		want bool
 	}{
-	// TODO: Add test cases.
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -130,7 +96,7 @@ func TestCard_String(t *testing.T) {
 		c    Card
 		want string
 	}{
-	// TODO: Add test cases.
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -141,23 +107,21 @@ func TestCard_String(t *testing.T) {
 	}
 }
 
-func TestCardMake(t *testing.T) {
+func TestMakeCard(t *testing.T) {
 	type args struct {
-		p uint32
-		r uint32
-		s uint32
-		b uint32
+		suit Suit
+		rank Rank
 	}
 	tests := []struct {
 		name string
 		args args
 		want Card
 	}{
-	// TODO: Add test cases.
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := MakeCard(tt.args.p, tt.args.r, tt.args.s, tt.args.b); got != tt.want {
+			if got := MakeCard(tt.args.suit, tt.args.rank); got != tt.want {
 				t.Errorf("MakeCard() = %v, want %v", got, tt.want)
 			}
 		})
@@ -174,7 +138,7 @@ func TestCardFromString(t *testing.T) {
 		want    Card
 		wantErr bool
 	}{
-	// TODO: Add test cases.
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -195,7 +159,7 @@ func TestCardSet(t *testing.T) {
 		name string
 		want CardSlice
 	}{
-	// TODO: Add test cases.
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -217,7 +181,7 @@ func TestCardSliceFromString(t *testing.T) {
 		want    CardSlice
 		wantErr bool
 	}{
-	// TODO: Add test cases.
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -239,7 +203,7 @@ func TestCardSlice_String(t *testing.T) {
 		cs   CardSlice
 		want string
 	}{
-	// TODO: Add test cases.
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -256,7 +220,7 @@ func TestCardSlice_Sort(t *testing.T) {
 		cs   CardSlice
 		want CardSlice
 	}{
-	// TODO: Add test cases.
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -273,7 +237,7 @@ func TestCardSlice_Reverse(t *testing.T) {
 		cs   CardSlice
 		want CardSlice
 	}{
-	// TODO: Add test cases.
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -290,7 +254,7 @@ func TestCardSlice_Shuffle(t *testing.T) {
 		cs   CardSlice
 		want CardSlice
 	}{
-	// TODO: Add test cases.
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -311,7 +275,7 @@ func TestCardSlice_Subtract(t *testing.T) {
 		args args
 		want CardSlice
 	}{
-	// TODO: Add test cases.
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -332,7 +296,7 @@ func TestCardSlice_CopyRank(t *testing.T) {
 		args args
 		want CardSlice
 	}{
-	// TODO: Add test cases.
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -353,7 +317,7 @@ func TestCardSlice_RemoveRank(t *testing.T) {
 		args args
 		want CardSlice
 	}{
-	// TODO: Add test cases.
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -370,7 +334,7 @@ func TestCardSlice_Copy(t *testing.T) {
 		cs   CardSlice
 		want CardSlice
 	}{
-	// TODO: Add test cases.
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -387,7 +351,7 @@ func TestCardSlice_Ranks(t *testing.T) {
 		cs   CardSlice
 		want RankCount
 	}{
-	// TODO: Add test cases.
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -409,7 +373,7 @@ func TestCardSlice_search(t *testing.T) {
 		args args
 		want int
 	}{
-	// TODO: Add test cases.
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -431,7 +395,7 @@ func TestCardSlice_Search(t *testing.T) {
 		args args
 		want int
 	}{
-	// TODO: Add test cases.
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -453,33 +417,12 @@ func TestCardSlice_Contains(t *testing.T) {
 		args args
 		want bool
 	}{
-	// TODO: Add test cases.
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.cs.Contains(tt.args.rhs, tt.args.ascend); got != tt.want {
 				t.Errorf("CardSlice.Contains() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestRankCount_Count(t *testing.T) {
-	type args struct {
-		r Rank
-	}
-	tests := []struct {
-		name string
-		rc   RankCount
-		args args
-		want int
-	}{
-	// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.rc.Count(tt.args.r); got != tt.want {
-				t.Errorf("RankCount.Count() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -491,7 +434,7 @@ func TestRankCount_Copy(t *testing.T) {
 		rc   RankCount
 		want RankCount
 	}{
-	// TODO: Add test cases.
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -511,7 +454,7 @@ func TestRankCount_Update(t *testing.T) {
 		rc   *RankCount
 		args args
 	}{
-	// TODO: Add test cases.
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -526,7 +469,7 @@ func TestRankCount_Sort(t *testing.T) {
 		rc   RankCount
 		want RankCount
 	}{
-	// TODO: Add test cases.
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -547,7 +490,7 @@ func TestRankCount_Equals(t *testing.T) {
 		args args
 		want bool
 	}{
-	// TODO: Add test cases.
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -569,7 +512,7 @@ func TestRankCount_IsChain(t *testing.T) {
 		args args
 		want bool
 	}{
-	// TODO: Add test cases.
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -586,7 +529,7 @@ func TestRankCount_String(t *testing.T) {
 		rc   RankCount
 		want string
 	}{
-	// TODO: Add test cases.
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

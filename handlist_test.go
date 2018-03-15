@@ -182,3 +182,57 @@ func TestHandContext_searchChain(t *testing.T) {
 		})
 	}
 }
+
+func Test_nextComb(t *testing.T) {
+	type args struct {
+		comb []int
+		k    int
+		n    int
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := nextComb(tt.args.comb, tt.args.k, tt.args.n); got != tt.want {
+				t.Errorf("nextComb() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestHandContext_searchTrioKickerChain(t *testing.T) {
+	type fields struct {
+		ranks    RankCount
+		cards    CardSlice
+		reversed CardSlice
+	}
+	type args struct {
+		toBeat *Hand
+		kc     int
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   *Hand
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := &HandContext{
+				ranks:    tt.fields.ranks,
+				cards:    tt.fields.cards,
+				reversed: tt.fields.reversed,
+			}
+			if got := ctx.searchTrioKickerChain(tt.args.toBeat, tt.args.kc); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("HandContext.searchTrioKickerChain() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
