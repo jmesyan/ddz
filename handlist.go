@@ -177,6 +177,99 @@ func (ctx *HandContext) searchTrioKicker(toBeat *Hand, kickerNum int) *Hand {
 	return nil
 }
 
+func (ctx *HandContext) searchFourKicker(toBeat *Hand, kickerNum int) *Hand {
+	hFourBeat := &Hand{}
+	hKickBeat := &Hand{}
+	canBeat := false
+
+	temp := ctx.cards.Copy()
+
+	// copy hands
+	hFour := &Hand{
+		Cards: make(CardSlice, 4),
+	}
+	hKick1 := &Hand{
+		Cards: make(CardSlice, kickerNum),
+	}
+	hKick2 := &Hand{
+		Cards: make(CardSlice, kickerNum),
+	}
+	copy(hFour.Cards, toBeat.Cards[0:4])
+	copy(hKick1.Cards, toBeat.Cards[4:4+kickerNum])
+	copy(hKick2.Cards, toBeat.Cards[4+kickerNum:4+kickerNum*2])
+
+	// same rank four
+	if temp.Contains(hFour.Cards, true) {
+		// keep four beat
+		hFourBeat.Cards = hFour.Cards.Copy()
+		temp = temp.RemoveRank(hFourBeat.Cards[0].Rank())
+
+		// search for a higher rank kicker
+		for i := 0; i < len(temp); {
+			v := temp[i]
+			num := ctx.ranks[v.Rank()]
+			if num >= kickerNum && v.Rank() > hKick1.Cards[0].Rank() && v.Rank() != hKick2.Cards[0].Rank() {
+				if v.Rank() < hKick2.Cards[0].Rank() {
+					hKickBeat.Cards = append(hKickBeat.Cards, temp[i:i+kickerNum]...)
+					hKickBeat.Cards = append(hKickBeat.Cards, hKick2.Cards...)
+				} else {
+					hKickBeat.Cards = append(hKickBeat.Cards, hKick2.Cards...)
+					hKickBeat.Cards = append(hKickBeat.Cards, temp[i:i+kickerNum]...)
+				}
+				canBeat = true
+				break
+			} else {
+				i += num
+			}
+		}
+
+		// if kicker can't beat, restore four
+		if !canBeat {
+			hFourBeat.Cards = CardSlice{}
+			temp = ctx.cards.Copy()
+		}
+	}
+
+	// same rank trio not found
+	// OR
+	// same rank four found, but kicker can't beat
+	if !canBeat {
+		hFourBeat = ctx.searchPrimal(hFour, int(HandPrimalFour))
+		if hFourBeat != nil {
+			// trio beat found, search for kicker beat
+			// remove trio from temp
+			temp = temp.RemoveRank(hFourBeat.Cards[0].Rank())
+			// search for a kicker
+			for i := 0; i < len(temp); {
+				v := temp[i]
+				num := ctx.ranks[v.Rank()]
+				if num >= kickerNum {
+					hKickBeat.Cards = append(hKickBeat.Cards, temp[i:i+kickerNum]...)
+					if len(hKickBeat.Cards) >= kickerNum*2 {
+						canBeat = true
+						break
+					}
+				}
+				i += num
+			}
+		}
+	}
+
+	// beat
+	if canBeat {
+		beat := &Hand{
+			Type:  toBeat.Type,
+			Cards: make(CardSlice, 4+kickerNum*2),
+		}
+		copy(beat.Cards, hFourBeat.Cards)
+		copy(beat.Cards[4:], hKickBeat.Cards)
+
+		return beat
+	}
+
+	return nil
+}
+
 func (ctx *HandContext) searchChain(toBeat *Hand, duplicate int) *Hand {
 	chainLen := len(toBeat.Cards) / duplicate
 
@@ -371,3 +464,65 @@ func (ctx *HandContext) searchTrioKickerChain(toBeat *Hand, kc int) *Hand {
 
 	return nil
 }
+
+const (
+	handTypeSolo          byte = HandPrimalSolo | HandKickerNone | HandChainless
+	handTypePair          byte = HandPrimalPair | HandKickerNone | HandChainless
+	handTypeTrio          byte = HandPrimalTrio | HandKickerNone | HandChainless
+	handTypeTrioPair      byte = HandPrimalTrio | HandKickerPair | HandChainless
+	handTypeTrioSolo      byte = HandPrimalTrio | HandKickerSolo | HandChainless
+	handTypeFourDualSolo  byte = HandPrimalFour | HandKickerDualSolo | HandChainless
+	handTypeFourDualPair  byte = HandPrimalFour | HandKickerDualPair | HandChainless
+	handTypeSoloChain     byte = HandPrimalSolo | HandKickerNone | HandChain
+	handTypePairChain     byte = HandPrimalPair | HandKickerNone | HandChain
+	handTypeTrioChain     byte = HandPrimalTrio | HandKickerNone | HandChain
+	handTypeTrioPairChain byte = HandPrimalTrio | HandKickerPair | HandChain
+	handTypeTrioSoloChain byte = HandPrimalTrio | HandKickerSolo | HandChain
+)
+
+func (cs *CardSlice) FindBeat(toBeat *Hand) *Hand {
+	// setup search context
+	ctx := NewHandContext(*cs)
+
+	var beat *Hand
+
+	switch toBeat.Type {
+	case handTypeSolo, handTypePair, handTypeTrio:
+		beat = ctx.searchPrimal(toBeat, int(toBeat.Primal()))
+	case handTypeTrioSolo, handTypeTrioPair:
+		beat = ctx.searchTrioKicker(toBeat, int(toBeat.Kicker()>>4))
+	case handTypeFourDualSolo, handTypeFourDualPair:
+		beat = ctx.searchFourKicker(toBeat, int((toBeat.Kicker()-HandKickerDualSolo)>>4)+1)
+	case handTypeSoloChain, handTypePairChain, handTypeTrioChain:
+		beat = ctx.searchChain(toBeat, int(toBeat.Primal()))
+	case handTypeTrioSoloChain, handTypeTrioPairChain:
+		beat = ctx.searchTrioKickerChain(toBeat, int(toBeat.Kicker()>>4))
+	}
+
+	if beat == nil {
+		beat = ctx.searchBomb(toBeat)
+	}
+
+	return beat
+}
+
+func (cs *CardSlice) FindBeatList(toBeat *Hand) []*Hand {
+	beatList := make([]*Hand, 0)
+	for {
+		beat := cs.FindBeat(toBeat)
+		if beat != nil {
+			beatList = append([]*Hand{beat}, beatList...)
+		} else {
+			break
+		}
+	}
+
+	if len(beatList) == 0 {
+		return nil
+	}
+	return beatList
+}
+
+// extract hands like 34567 / 334455 / 333444555 etc
+// array is a processed card array holds count[rank] == duplicate
+func
