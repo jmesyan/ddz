@@ -480,9 +480,10 @@ const (
 	handTypeTrioSoloChain byte = HandPrimalTrio | HandKickerSolo | HandChain
 )
 
-func (cs *CardSlice) FindBeat(toBeat *Hand) *Hand {
+// FindBeat in card slice, return nil if there's no beat
+func (cs CardSlice) FindBeat(toBeat *Hand) *Hand {
 	// setup search context
-	ctx := NewHandContext(*cs)
+	ctx := NewHandContext(cs)
 
 	var beat *Hand
 
@@ -506,6 +507,7 @@ func (cs *CardSlice) FindBeat(toBeat *Hand) *Hand {
 	return beat
 }
 
+// FindBeatList finds all beats in card slice, return nil if there's no beat
 func (cs *CardSlice) FindBeatList(toBeat *Hand) []*Hand {
 	beatList := make([]*Hand, 0)
 	for {
@@ -523,6 +525,154 @@ func (cs *CardSlice) FindBeatList(toBeat *Hand) []*Hand {
 	return beatList
 }
 
-// extract hands like 34567 / 334455 / 333444555 etc
+// extractConsecutive hands like 34567 / 334455 / 333444555 etc
 // array is a processed card array holds count[rank] == duplicate
-func
+//
+func extractConsecutive(cs CardSlice, duplicate int) (CardSlice, []*Hand) {
+	primals := []byte{0, HandPrimalSolo, HandPrimalPair, HandPrimalTrio}
+	chainLen := []int{0, HandSoloChainMinLength, HandPairChainMinLength, HandTrioChainMinLength}
+
+	if duplicate < 1 || duplicate > 3 || len(cs) == 0 {
+		return cs, nil
+	}
+
+	handList := make([]*Hand, 0)
+
+	i := duplicate
+	cardNum := len(cs) / duplicate
+	lastRank := cs[0].Rank()
+	for cardNum > 0 {
+		if lastRank+RankInc != cs[i].Rank() {
+			if i >= chainLen[duplicate] {
+				// chain break
+				hand := &Hand{
+					Cards: cs[0:i],
+					Type:  primals[duplicate] | HandChain,
+				}
+				cs = cs[i:]
+				handList = append([]*Hand{hand}, handList...)
+			} else {
+				// not a chain
+				for j := 0; j < i/duplicate; j++ {
+					hand := &Hand{
+						Cards: cs[0:duplicate],
+						Type:  primals[duplicate],
+					}
+					cs = cs[duplicate:]
+					handList = append([]*Hand{hand}, handList...)
+				}
+			}
+
+			if len(cs) == 0 {
+				break
+			}
+		} else {
+			// chain intact
+			lastRank = cs[i].Rank()
+			i += duplicate
+		}
+	}
+	k := i - duplicate // step back
+	if k != 0 && k == len(cs) {
+		// all chained up
+		if k >= chainLen[duplicate] {
+			// can chain up
+			hand := &Hand{
+				Cards: cs[0 : i-duplicate],
+				Type:  primals[duplicate] | HandChain,
+			}
+			cs = cs[i-duplicate:]
+			handList = append([]*Hand{hand}, handList...)
+		} else {
+			for j := 0; j < k/duplicate; j++ {
+				hand := &Hand{
+					Cards: cs[0:duplicate],
+					Type:  primals[duplicate],
+				}
+				cs = cs[duplicate:]
+				handList = append([]*Hand{hand}, handList...)
+			}
+		}
+	}
+	if len(handList) == 0 {
+		handList = nil
+	}
+	return cs, handList
+}
+
+// extractNukeBombDeuce extract nuke/bomb/2 from card slice
+// card slice, rank count with these cards removed will be returned
+func extractNukeBombDeuce(cs CardSlice, rc RankCount) (CardSlice, RankCount, []*Hand) {
+	handList := make([]*Hand, 0)
+	if rc[Rankr] != 0 && rc[RankR] != 0 {
+		// nuke
+		hand := &Hand{
+			Cards: CardSlice{Jokerr, JokerR},
+			Type:  HandPrimalNuke,
+		}
+		handList = append([]*Hand{hand}, handList...)
+		rc[Rankr] = 0
+		rc[RankR] = 0
+		cs = cs.RemoveRank(Rankr).RemoveRank(RankR)
+	}
+
+	for i := Rank3; i < Rankr; i += RankInc {
+		// bomb
+		if rc[i] == 4 {
+			hand := &Hand{
+				Cards: cs.CopyRank(i),
+				Type:  HandPrimalNuke,
+			}
+			handList = append([]*Hand{hand}, handList...)
+			rc[i] = 0
+			cs = cs.RemoveRank(i)
+		}
+	}
+
+	if rc[Rankr] != 0 || rc[RankR] != 0 {
+		var c Card
+		var r Rank
+		if rc[Rankr] != 0 {
+			c = Jokerr
+			r = Rankr
+		} else {
+			c = JokerR
+			r = RankR
+		}
+		// joker
+		hand := &Hand{
+			Cards: CardSlice{c},
+			Type:  HandPrimalSolo,
+		}
+		handList = append([]*Hand{hand}, handList...)
+		rc[r] = 0
+		cs = cs.RemoveRank(r)
+	}
+
+	if rc[Rank2] != 0 {
+		// 2
+		hand := &Hand{
+			Cards: cs.CopyRank(Rank2),
+		}
+		switch rc[Rank2] {
+		case 1:
+			hand.Type = HandPrimalSolo
+		case 2:
+			hand.Type = HandPrimalPair
+		case 3:
+			hand.Type = HandPrimalTrio
+		}
+		rc[Rank2] = 0
+		cs = cs.RemoveRank(Rank2)
+		handList = append([]*Hand{hand}, handList...)
+	}
+
+	if len(handList) == 0 {
+		handList = nil
+	}
+	return cs, rc, handList
+}
+
+func StandardAnalyze(cs CardSlice) {
+
+}
