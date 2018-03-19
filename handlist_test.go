@@ -1,28 +1,35 @@
 package ddz
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 )
 
 func TestNewHandContext(t *testing.T) {
-	type args struct {
-		cs CardSlice
+	//type args struct {
+	//	cs CardSlice
+	//}
+	//tests := []struct {
+	//	name string
+	//	args args
+	//	want *HandContext
+	//}{
+	//	// TODO: Add test cases.
+	//}
+	//for _, tt := range tests {
+	//	t.Run(tt.name, func(t *testing.T) {
+	//		if got := NewHandContext(tt.args.cs); !reflect.DeepEqual(got, tt.want) {
+	//			t.Errorf("NewHandContext() = %v, want %v", got, tt.want)
+	//		}
+	//	})
+	//}
+	cs := CardSet()
+	hl := StandardAnalyze(cs)
+	for _, h := range hl {
+		fmt.Println(h)
 	}
-	tests := []struct {
-		name string
-		args args
-		want *HandContext
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := NewHandContext(tt.args.cs); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewHandContext() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+	fmt.Println(cs)
 }
 
 func TestHandContext_Update(t *testing.T) {
@@ -40,7 +47,7 @@ func TestHandContext_Update(t *testing.T) {
 		args   args
 		want   *HandContext
 	}{
-		// TODO: Add test cases.
+	// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -72,7 +79,7 @@ func TestHandContext_searchPrimal(t *testing.T) {
 		args   args
 		want   *Hand
 	}{
-		// TODO: Add test cases.
+	// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -103,7 +110,7 @@ func TestHandContext_searchBomb(t *testing.T) {
 		args   args
 		want   *Hand
 	}{
-		// TODO: Add test cases.
+	// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -135,7 +142,7 @@ func TestHandContext_searchTrioKicker(t *testing.T) {
 		args   args
 		want   *Hand
 	}{
-		// TODO: Add test cases.
+	// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -167,7 +174,7 @@ func TestHandContext_searchChain(t *testing.T) {
 		args   args
 		want   *Hand
 	}{
-		// TODO: Add test cases.
+	// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -194,7 +201,7 @@ func Test_nextComb(t *testing.T) {
 		args args
 		want bool
 	}{
-		// TODO: Add test cases.
+	// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -221,7 +228,7 @@ func TestHandContext_searchTrioKickerChain(t *testing.T) {
 		args   args
 		want   *Hand
 	}{
-		// TODO: Add test cases.
+	// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

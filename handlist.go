@@ -378,8 +378,8 @@ func (ctx *HandContext) searchTrioKickerChain(toBeat *Hand, kc int) *Hand {
 			kickCount[hTrio.Cards[i].Rank()] = 0
 		}
 
-		comb2rank := make([]int, RankNumber)
-		rank2comb := make([]int, RankNumber)
+		comb2rank := make([]int, RankCountSize)
+		rank2comb := make([]int, RankCountSize)
 		j := 0
 		// remove count < kc and calculate n
 		for i := Rank3; i < Rank2; i += RankInc {
@@ -400,7 +400,7 @@ func (ctx *HandContext) searchTrioKickerChain(toBeat *Hand, kc int) *Hand {
 		}
 
 		// combination
-		comb := make([]int, RankNumber)
+		comb := make([]int, RankCountSize)
 		for i := 0; i < len(hKick.Cards); i += kc {
 			comb[j] = rank2comb[hKick.Cards[i].Rank()]
 			j++
@@ -621,7 +621,7 @@ func extractNukeBombDeuce(cs CardSlice, rc RankCount) (CardSlice, RankCount, []*
 		if rc[i] == 4 {
 			hand := &Hand{
 				Cards: cs.CopyRank(i),
-				Type:  HandPrimalNuke,
+				Type:  HandPrimalBomb,
 			}
 			handList = append([]*Hand{hand}, handList...)
 			rc[i] = 0
@@ -673,6 +673,79 @@ func extractNukeBombDeuce(cs CardSlice, rc RankCount) (CardSlice, RankCount, []*
 	return cs, rc, handList
 }
 
-func StandardAnalyze(cs CardSlice) {
+func StandardAnalyze(cs CardSlice) []*Hand {
+	cs = cs.Sort()
+	rc := cs.Ranks()
 
+	soloSlice := make(CardSlice, 0)
+	pairSlice := make(CardSlice, 0)
+	trioSlice := make(CardSlice, 0)
+	slices := []CardSlice{soloSlice, pairSlice, trioSlice}
+
+	// nuke, bomb and 2
+	cs, rc, handList := extractNukeBombDeuce(cs, rc)
+
+	// copy cards into different slices by their number
+	for i := 0; i < len(cs); {
+		c := rc[cs[i].Rank()]
+		if c != 0 {
+			slices[c-1] = append(slices[c-1], cs[i:i+int(c)]...)
+			i += c
+		} else {
+			i++
+		}
+	}
+
+	// extract chains
+	for i := 2; i >= 0; i-- {
+		_, l := extractConsecutive(slices[i], i+1)
+		if l != nil && len(l) > 0 {
+			handList = append(l, handList...)
+		}
+	}
+
+	if len(handList) == 0 {
+		handList = nil
+	}
+
+	return handList
+}
+
+func (ctx *HandContext) findLongestConsecutive(duplicate int) *Hand {
+	// early break
+	if duplicate < 1 || duplicate > 3 {
+		return nil
+	}
+
+	primals := []byte{0, HandPrimalSolo, HandPrimalPair, HandPrimalTrio}
+	chainLen := []int{0, HandSoloChainMinLength, HandPairChainMinLength, HandTrioChainMinLength}
+
+	if len(ctx.cards) < chainLen[duplicate] {
+		return nil
+	}
+
+	rankStart := Rank(0)
+	chain := make(CardSlice, 0)
+
+	// i <= Rank2
+	// but count[Rank2] must be 0
+	// for 2/bomb/nuke has been removed before calling this method
+	for i := Rank3; i <= Rank2; i += RankInc {
+		// find start of a possible chain
+		if rankStart == 0 {
+			if ctx.ranks[i] >= duplicate {
+				rankStart = i
+			}
+			continue
+		}
+
+		if ctx.ranks[i] < duplicate {
+			// chain breaks, extract chain and set new possible start
+			if int(i-rankStart)*duplicate >= chainLen[duplicate] && int(i-rankStart) > len(chain) {
+				// valid chain, store rank
+
+			}
+
+		}
+	}
 }

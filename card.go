@@ -27,7 +27,7 @@ const (
 	RankR   Rank = 0x0F
 	RankInc Rank = 0x01
 
-	RankNumber = 15
+	RankCountSize = int(RankR + RankInc)
 )
 
 // Suits
@@ -114,7 +114,7 @@ type Suit uint8
 type Rank uint8
 
 // RankCount holds ranks counts in card slice
-type RankCount [RankNumber]int
+type RankCount [RankCountSize]int
 
 var (
 	// ErrorInvalidFormat error
@@ -509,7 +509,7 @@ func (rc RankCount) Sort() RankCount {
 
 // Equals return true if two rank count are identical
 func (rc RankCount) Equals(rhs RankCount) bool {
-	for i := 0; i < RankNumber; i++ {
+	for i := 0; i < RankCountSize; i++ {
 		if rc[i] != rhs[i] {
 			return false
 		}
