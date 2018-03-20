@@ -276,8 +276,8 @@ func init() {
 }
 
 // Copy returns a copy of hand
-func (h Hand) Copy() Hand {
-	return Hand{
+func (h Hand) Copy() *Hand {
+	return &Hand{
 		Type:  h.Type,
 		Cards: h.Cards.Copy(),
 	}

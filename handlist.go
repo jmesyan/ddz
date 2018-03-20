@@ -1,31 +1,36 @@
 package ddz
 
-// HandList wrapper for hand slice
-type HandList []Hand
-
-// HandContext context of beat search
-type HandContext struct {
+// handContext context of beat search
+type handContext struct {
 	ranks    RankCount
 	cards    CardSlice
 	reversed CardSlice
 }
 
-// NewHandContext returns new hand context from card slice
-func NewHandContext(cs CardSlice) *HandContext {
-	ctx := HandContext{}
-	ctx.Update(cs)
+// newHandContext returns new hand context from card slice
+func newHandContext(cs CardSlice) *handContext {
+	ctx := handContext{}
+	ctx.update(cs)
 	return &ctx
 }
 
-// Update hand context with sorted card slice
-func (ctx *HandContext) Update(cs CardSlice) *HandContext {
+func (ctx *handContext) copy() *handContext {
+	return &handContext{
+		ranks:    ctx.ranks.Copy(),
+		cards:    ctx.cards.Copy(),
+		reversed: ctx.reversed.Copy(),
+	}
+}
+
+// update hand context with sorted card slice
+func (ctx *handContext) update(cs CardSlice) *handContext {
 	ctx.ranks.Update(cs)
 	ctx.cards = cs.Copy()
 	ctx.reversed = cs.Copy().Reverse()
 	return ctx
 }
 
-func (ctx *HandContext) searchPrimal(toBeat *Hand, primalNum int) *Hand {
+func (ctx *handContext) searchPrimal(toBeat *Hand, primalNum int) *Hand {
 	var beat *Hand
 	rank := toBeat.Cards[0].Rank()
 	// search for primal, from low to high rank
@@ -45,7 +50,7 @@ func (ctx *HandContext) searchPrimal(toBeat *Hand, primalNum int) *Hand {
 	return beat
 }
 
-func (ctx *HandContext) searchBomb(toBeat *Hand) *Hand {
+func (ctx *handContext) searchBomb(toBeat *Hand) *Hand {
 	if toBeat.Type == HandPrimalNuke {
 		// cannot beat nuke
 		return nil
@@ -94,7 +99,7 @@ func (ctx *HandContext) searchBomb(toBeat *Hand) *Hand {
 // we assume trio with same ranks but with different
 // kickers can compare with each other
 // like 33355 > 33344
-func (ctx *HandContext) searchTrioKicker(toBeat *Hand, kickerNum int) *Hand {
+func (ctx *handContext) searchTrioKicker(toBeat *Hand, kickerNum int) *Hand {
 	hTrioBeat := &Hand{}
 	hKickBeat := &Hand{}
 	canBeat := false
@@ -177,7 +182,7 @@ func (ctx *HandContext) searchTrioKicker(toBeat *Hand, kickerNum int) *Hand {
 	return nil
 }
 
-func (ctx *HandContext) searchFourKicker(toBeat *Hand, kickerNum int) *Hand {
+func (ctx *handContext) searchFourKicker(toBeat *Hand, kickerNum int) *Hand {
 	hFourBeat := &Hand{}
 	hKickBeat := &Hand{}
 	canBeat := false
@@ -270,7 +275,7 @@ func (ctx *HandContext) searchFourKicker(toBeat *Hand, kickerNum int) *Hand {
 	return nil
 }
 
-func (ctx *HandContext) searchChain(toBeat *Hand, duplicate int) *Hand {
+func (ctx *handContext) searchChain(toBeat *Hand, duplicate int) *Hand {
 	chainLen := len(toBeat.Cards) / duplicate
 
 	// this is ugly, but it seems to be the best way to iterate ranks
@@ -350,7 +355,7 @@ func nextComb(comb []int, k, n int) bool {
 	return true
 }
 
-func (ctx *HandContext) searchTrioKickerChain(toBeat *Hand, kc int) *Hand {
+func (ctx *handContext) searchTrioKickerChain(toBeat *Hand, kc int) *Hand {
 	chainLen := len(toBeat.Cards) / (3 + kc)
 	hTrio := &Hand{
 		Cards: toBeat.Cards[0 : 3*chainLen],
@@ -480,10 +485,10 @@ const (
 	handTypeTrioSoloChain byte = HandPrimalTrio | HandKickerSolo | HandChain
 )
 
-// FindBeat in card slice, return nil if there's no beat
-func (cs CardSlice) FindBeat(toBeat *Hand) *Hand {
+// SearchBeat in card slice, return nil if there's no beat
+func (cs CardSlice) SearchBeat(toBeat *Hand) *Hand {
 	// setup search context
-	ctx := NewHandContext(cs)
+	ctx := newHandContext(cs)
 
 	var beat *Hand
 
@@ -507,11 +512,11 @@ func (cs CardSlice) FindBeat(toBeat *Hand) *Hand {
 	return beat
 }
 
-// FindBeatList finds all beats in card slice, return nil if there's no beat
-func (cs *CardSlice) FindBeatList(toBeat *Hand) []*Hand {
+// SearchBeatList finds all beats in card slice, return nil if there's no beat
+func (cs *CardSlice) SearchBeatList(toBeat *Hand) []*Hand {
 	beatList := make([]*Hand, 0)
 	for {
-		beat := cs.FindBeat(toBeat)
+		beat := cs.SearchBeat(toBeat)
 		if beat != nil {
 			beatList = append([]*Hand{beat}, beatList...)
 		} else {
@@ -689,7 +694,7 @@ func StandardAnalyze(cs CardSlice) []*Hand {
 	for i := 0; i < len(cs); {
 		c := rc[cs[i].Rank()]
 		if c != 0 {
-			slices[c-1] = append(slices[c-1], cs[i:i+int(c)]...)
+			slices[c-1] = append(slices[c-1], cs[i:i+c]...)
 			i += c
 		} else {
 			i++
@@ -699,7 +704,7 @@ func StandardAnalyze(cs CardSlice) []*Hand {
 	// extract chains
 	for i := 2; i >= 0; i-- {
 		_, l := extractConsecutive(slices[i], i+1)
-		if l != nil && len(l) > 0 {
+		if len(l) > 0 {
 			handList = append(l, handList...)
 		}
 	}
@@ -711,7 +716,7 @@ func StandardAnalyze(cs CardSlice) []*Hand {
 	return handList
 }
 
-func (ctx *HandContext) findLongestConsecutive(duplicate int) *Hand {
+func (ctx *handContext) findLongestConsecutive(duplicate int) *Hand {
 	// early break
 	if duplicate < 1 || duplicate > 3 {
 		return nil
@@ -724,28 +729,155 @@ func (ctx *HandContext) findLongestConsecutive(duplicate int) *Hand {
 		return nil
 	}
 
-	rankStart := Rank(0)
-	chain := make(CardSlice, 0)
+	currChain := make(CardSlice, 0)
+	prevChain := make(CardSlice, 0)
 
-	// i <= Rank2
-	// but count[Rank2] must be 0
-	// for 2/bomb/nuke has been removed before calling this method
-	for i := Rank3; i <= Rank2; i += RankInc {
+	for i := 0; i < len(ctx.cards) && ctx.cards[i].Rank() < Rank2; {
+		num := ctx.ranks[ctx.cards[i].Rank()]
 		// find start of a possible chain
-		if rankStart == 0 {
-			if ctx.ranks[i] >= duplicate {
-				rankStart = i
+		if len(currChain) == 0 {
+			if num >= duplicate {
+				currChain = append(currChain, ctx.cards[i:i+duplicate]...)
 			}
+			i += num
 			continue
 		}
 
-		if ctx.ranks[i] < duplicate {
+		if num >= duplicate && currChain[len(currChain)-1].Rank()+RankInc == ctx.cards[i].Rank() {
+			currChain = append(currChain, ctx.cards[i:i+duplicate]...)
+			i += num
+		} else {
 			// chain breaks, extract chain and set new possible start
-			if int(i-rankStart)*duplicate >= chainLen[duplicate] && int(i-rankStart) > len(chain) {
-				// valid chain, store rank
-
+			if len(currChain) >= chainLen[duplicate] && len(currChain) > len(prevChain) {
+				// valid chain, and length greater then previous one
+				prevChain = currChain
 			}
-
+			currChain = make(CardSlice, 0)
 		}
 	}
+
+	// final check
+	if len(currChain) >= chainLen[duplicate] && len(currChain) > len(prevChain) {
+		prevChain = currChain
+	}
+
+	if len(prevChain) > 0 {
+		return &Hand{
+			Cards: prevChain,
+			Type:  primals[duplicate] | HandChain,
+		}
+	}
+
+	return nil
+}
+
+// pass in a nil hand to start traverse
+// solo, pair, trio chain and trio, pair, solo
+func (ctx *handContext) traverseChains(hand *Hand, duplicate *int) bool {
+	if len(ctx.cards) == 0 || *duplicate < 1 || *duplicate > 3 {
+		return false
+	}
+
+	if hand == nil {
+		for *duplicate < 4 && hand == nil {
+			hand = ctx.findLongestConsecutive(*duplicate)
+			if hand != nil {
+				break
+			} else {
+				*duplicate++
+			}
+		}
+	} else {
+		hand = ctx.cards.SearchBeat(hand)
+	}
+
+	return hand != nil
+}
+
+// extract all chains or primal hands in handContext
+func (ctx *handContext) extractAllChains() []*Hand {
+	lastSearch := 1
+	handList := make([]*Hand, 0)
+	var lastHand *Hand
+	found := ctx.traverseChains(lastHand, &lastSearch)
+	for found {
+		handList = append([]*Hand{lastHand}, handList...)
+		workingHand := lastHand.Copy()
+
+		for found = ctx.traverseChains(workingHand, &lastSearch); found; {
+			handList = append([]*Hand{workingHand}, handList...)
+		}
+
+		// can't find any more hands, reduce chain length and try again
+		if lastHand != nil {
+			if lastHand.Type == handTypeSoloChain && len(lastHand.Cards) > HandSoloChainMinLength {
+				lastHand.Cards = lastHand.Cards[1:]
+				found = true
+			} else if lastHand.Type == handTypePairChain && len(lastHand.Cards) > HandPairChainMinLength {
+				lastHand.Cards = lastHand.Cards[2:]
+				found = true
+			} else if lastHand.Type == handTypeTrioChain && len(lastHand.Cards) > HandTrioChainMinLength {
+				lastHand.Cards = lastHand.Cards[3:]
+				found = true
+			} else {
+				lastHand.Type = 0
+			}
+
+			if !found {
+				// still can't find a chain, loop through hand type for more
+				lastSearch++
+				lastHand = nil
+				found = ctx.traverseChains(lastHand, &lastSearch)
+			}
+		}
+	}
+
+	if len(handList) == 0 {
+		handList = nil
+	}
+
+	return handList
+}
+
+type searchTreeNode struct {
+	ctx    *handContext
+	hand   *Hand
+	weight int
+}
+
+func (n *searchTreeNode) copy() *searchTreeNode {
+	return &searchTreeNode{
+		ctx:    n.ctx.copy(),
+		hand:   n.hand.Copy(),
+		weight: n.weight,
+	}
+}
+
+type searchTree struct {
+	node     *searchTreeNode
+	parent   *searchTree
+	children []*searchTree
+}
+
+// add node to tree, return new leaf
+func (t *searchTree) addChild(node searchTreeNode) *searchTree {
+	newNode := &searchTreeNode{
+		ctx:    t.node.ctx.copy(),
+		hand:   node.hand.Copy(),
+		weight: t.node.weight + 1,
+	}
+	newNode.ctx.cards = newNode.ctx.cards.Subtract(node.hand.Cards)
+	newNode.ctx.update(newNode.ctx.cards)
+
+	child := &searchTree{
+		node:   newNode,
+		parent: t,
+	}
+
+	if t.children == nil {
+		t.children = make([]*searchTree, 0)
+	}
+	t.children = append(t.children, child)
+
+	return child
 }

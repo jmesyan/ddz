@@ -13,23 +13,33 @@ func TestNewHandContext(t *testing.T) {
 	//tests := []struct {
 	//	name string
 	//	args args
-	//	want *HandContext
+	//	want *handContext
 	//}{
 	//	// TODO: Add test cases.
 	//}
 	//for _, tt := range tests {
 	//	t.Run(tt.name, func(t *testing.T) {
-	//		if got := NewHandContext(tt.args.cs); !reflect.DeepEqual(got, tt.want) {
-	//			t.Errorf("NewHandContext() = %v, want %v", got, tt.want)
+	//		if got := newHandContext(tt.args.cs); !reflect.DeepEqual(got, tt.want) {
+	//			t.Errorf("newHandContext() = %v, want %v", got, tt.want)
 	//		}
 	//	})
 	//}
-	cs := CardSet()
-	hl := StandardAnalyze(cs)
-	for _, h := range hl {
-		fmt.Println(h)
+	cs := CardSlice{
+		Diamond3,
+		Diamond4,
+		Diamond5,
+		Diamond6,
+		Diamond7,
+		Heart9,
+		HeartT,
+		HeartJ,
+		HeartQ,
+		HeartK,
+		HeartA,
 	}
-	fmt.Println(cs)
+	ctx := newHandContext(cs)
+	h := ctx.findLongestConsecutive(1)
+	fmt.Println(h)
 }
 
 func TestHandContext_Update(t *testing.T) {
@@ -45,19 +55,19 @@ func TestHandContext_Update(t *testing.T) {
 		name   string
 		fields fields
 		args   args
-		want   *HandContext
+		want   *handContext
 	}{
 	// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := &HandContext{
+			ctx := &handContext{
 				ranks:    tt.fields.ranks,
 				cards:    tt.fields.cards,
 				reversed: tt.fields.reversed,
 			}
-			if got := ctx.Update(tt.args.cs); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("HandContext.Update() = %v, want %v", got, tt.want)
+			if got := ctx.update(tt.args.cs); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("handContext.update() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -83,13 +93,13 @@ func TestHandContext_searchPrimal(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := &HandContext{
+			ctx := &handContext{
 				ranks:    tt.fields.ranks,
 				cards:    tt.fields.cards,
 				reversed: tt.fields.reversed,
 			}
 			if got := ctx.searchPrimal(tt.args.toBeat, tt.args.primalNum); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("HandContext.searchPrimal() = %v, want %v", got, tt.want)
+				t.Errorf("handContext.searchPrimal() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -114,13 +124,13 @@ func TestHandContext_searchBomb(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := &HandContext{
+			ctx := &handContext{
 				ranks:    tt.fields.ranks,
 				cards:    tt.fields.cards,
 				reversed: tt.fields.reversed,
 			}
 			if got := ctx.searchBomb(tt.args.toBeat); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("HandContext.searchBomb() = %v, want %v", got, tt.want)
+				t.Errorf("handContext.searchBomb() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -146,13 +156,13 @@ func TestHandContext_searchTrioKicker(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := &HandContext{
+			ctx := &handContext{
 				ranks:    tt.fields.ranks,
 				cards:    tt.fields.cards,
 				reversed: tt.fields.reversed,
 			}
 			if got := ctx.searchTrioKicker(tt.args.toBeat, tt.args.kickerNum); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("HandContext.searchTrioKicker() = %v, want %v", got, tt.want)
+				t.Errorf("handContext.searchTrioKicker() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -178,13 +188,13 @@ func TestHandContext_searchChain(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := &HandContext{
+			ctx := &handContext{
 				ranks:    tt.fields.ranks,
 				cards:    tt.fields.cards,
 				reversed: tt.fields.reversed,
 			}
 			if got := ctx.searchChain(tt.args.toBeat, tt.args.duplicate); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("HandContext.searchChain() = %v, want %v", got, tt.want)
+				t.Errorf("handContext.searchChain() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -232,13 +242,13 @@ func TestHandContext_searchTrioKickerChain(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := &HandContext{
+			ctx := &handContext{
 				ranks:    tt.fields.ranks,
 				cards:    tt.fields.cards,
 				reversed: tt.fields.reversed,
 			}
 			if got := ctx.searchTrioKickerChain(tt.args.toBeat, tt.args.kc); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("HandContext.searchTrioKickerChain() = %v, want %v", got, tt.want)
+				t.Errorf("handContext.searchTrioKickerChain() = %v, want %v", got, tt.want)
 			}
 		})
 	}
