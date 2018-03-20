@@ -853,20 +853,36 @@ func (n *searchTreeNode) copy() *searchTreeNode {
 	}
 }
 
+func newSearchTreeNode(ctx *handContext) *searchTreeNode {
+	return &searchTreeNode{
+		ctx:    ctx.copy(),
+		hand:   nil,
+		weight: 0,
+	}
+}
+
 type searchTree struct {
 	node     *searchTreeNode
 	parent   *searchTree
 	children []*searchTree
 }
 
+func newSearchTree(n *searchTreeNode) *searchTree {
+	return &searchTree{
+		node:     n,
+		parent:   nil,
+		children: nil,
+	}
+}
+
 // add node to tree, return new leaf
-func (t *searchTree) addChild(node searchTreeNode) *searchTree {
+func (t *searchTree) addChild(hand *Hand) *searchTree {
 	newNode := &searchTreeNode{
 		ctx:    t.node.ctx.copy(),
-		hand:   node.hand.Copy(),
+		hand:   hand.Copy(),
 		weight: t.node.weight + 1,
 	}
-	newNode.ctx.cards = newNode.ctx.cards.Subtract(node.hand.Cards)
+	newNode.ctx.cards = newNode.ctx.cards.Subtract(hand.Cards)
 	newNode.ctx.update(newNode.ctx.cards)
 
 	child := &searchTree{
@@ -880,4 +896,54 @@ func (t *searchTree) addChild(node searchTreeNode) *searchTree {
 	t.children = append(t.children, child)
 
 	return child
+}
+
+func AdvancedAnalyze(cs CardSlice) []*Hand {
+	// setup search context
+	ctx := newHandContext(cs)
+	var handList []*Hand
+	// extract nuke, bomb, 2
+	ctx.cards, ctx.ranks, handList = extractNukeBombDeuce(ctx.cards, ctx.ranks)
+	if len(handList) == 0 {
+		handList = make([]*Hand, 0)
+	}
+	// update hand context
+	ctx.update(ctx.cards)
+
+	// magic goes here
+
+	// root
+	node := newSearchTreeNode(ctx)
+	grandTree := newSearchTree(node)
+
+	// first expansion
+	chains := ctx.extractAllChains()
+
+	if len(chains) == 0 {
+		// no chains, fallback to standard analyze
+		return StandardAnalyze(cs)
+	}
+
+	// got chains, start expansion
+	stack := make([]*searchTree, 0)
+	for _, hand := range chains {
+		treeNode := grandTree.addChild(hand)
+		stack = append(stack, treeNode)
+	}
+
+	// loop start
+	for len(stack) != 0 {
+		// pop stack
+		workingTree := stack[0]
+		stack = stack[1:]
+		node := workingTree.node
+
+		// expansion
+		chains := node.ctx.extractAllChains()
+		if len(chains) > 0 {
+			// push new nodes
+		}
+	}
+
+	return nil
 }
