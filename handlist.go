@@ -1,5 +1,7 @@
 package ddz
 
+import "sort"
+
 // handContext context of beat search
 type handContext struct {
 	ranks    RankCount
@@ -678,6 +680,11 @@ func extractNukeBombDeuce(cs CardSlice, rc RankCount) (CardSlice, RankCount, []*
 	return cs, rc, handList
 }
 
+// StandardAnalyze extract hands from card slice
+// 1. nuke/bombs/deuces
+// 2. chains
+// 3. trio,pair,solo
+//
 func StandardAnalyze(cs CardSlice) []*Hand {
 	cs = cs.Sort()
 	rc := cs.Ranks()
@@ -898,6 +905,30 @@ func (t *searchTree) addChild(hand *Hand) *searchTree {
 	return child
 }
 
+// dump all leaves
+func (t *searchTree) dumpLeaves() []*searchTree {
+	leaves := make([]*searchTree, 0)
+	stack := []*searchTree{t}
+	for len(stack) > 0 {
+		node := stack[0]
+		stack = stack[1:]
+
+		for _, child := range node.children {
+			stack = append(stack, child)
+		}
+
+		if len(node.children) == 0 {
+			leaves = append(leaves, node)
+		}
+	}
+
+	return leaves
+}
+
+// AdvancedAnalyze extract hands from card slice
+// 1. nuke/bomb/deuces
+// 2. extract card slice into hand slice with smallest number of hands
+//
 func AdvancedAnalyze(cs CardSlice) []*Hand {
 	// setup search context
 	ctx := newHandContext(cs)
@@ -942,7 +973,103 @@ func AdvancedAnalyze(cs CardSlice) []*Hand {
 		chains := node.ctx.extractAllChains()
 		if len(chains) > 0 {
 			// push new nodes
+			for _, hand := range chains {
+				treeNode := workingTree.addChild(hand)
+				stack = append(stack, treeNode)
+			}
 		}
+	}
+
+	// tree construction complete, dump all leaves
+	leaves := grandTree.dumpLeaves()
+
+	// find the shortest path
+	var shortest *searchTree
+	for len(leaves) > 0 {
+		// pop stack
+		workingTree := leaves[0]
+		leaves = leaves[1:]
+
+		// calculate other hands weight
+		workingTree.node.weight += len(StandardAnalyze(node.ctx.cards))
+
+		if shortest == nil || workingTree.node.weight < shortest.node.weight {
+			shortest = workingTree
+		}
+	}
+
+	// extract shortest node's other hands
+	otherHands := StandardAnalyze(shortest.node.ctx.cards)
+	for shortest != nil && shortest.node.weight != 0 {
+		otherHands = append([]*Hand{shortest.node.hand}, otherHands...)
+		shortest = shortest.parent
+	}
+	return append(otherHands, handList...)
+}
+
+type beatNode struct {
+	hand  *Hand
+	value int
+}
+
+type Evaluator interface {
+	Evaluate(cs CardSlice) int
+}
+
+type StandardEvaluator struct {
+	Evaluator
+}
+
+// StandardEvaluator evaluates a card slice
+// return a integer value reflect slice's quality
+// the smaller the value is, the better the card slice is
+//
+func (e *StandardEvaluator) Evaluate(cs CardSlice) int {
+	return len(StandardAnalyze(cs))*0x10 + int(cs[len(cs)-1].Rank())
+}
+
+func bestBeat(cs CardSlice, toBeat *Hand, evaluator Evaluator) *Hand {
+	if evaluator == nil {
+		evaluator = StandardEvaluator{}
+	}
+
+	// search beat list
+	beatList := cs.SearchBeatList(toBeat)
+	if len(beatList) == 0 {
+		return nil
+	}
+
+	// separate bomb/nuke and normal hands
+	bombs := make([]*beatNode, 0)
+	nodes := make([]*beatNode, 0)
+
+	for _, hand := range beatList {
+		if hand.Type == HandPrimalNuke || hand.Type == HandPrimalBomb {
+			bombs = append(bombs, &beatNode{hand: hand, value: 0})
+		} else {
+			nodes = append(nodes, &beatNode{hand: hand, value: 0})
+		}
+	}
+
+	// evaluate
+	if len(nodes) > 1 {
+		for _, node := range nodes {
+			leftover := cs.Subtract(node.hand.Cards)
+			node.value = evaluator.Evaluate(leftover)
+		}
+
+		// sort
+		sort.Slice(nodes, func(i, j int) bool {
+			return nodes[i].value > nodes[j].value
+		})
+	}
+
+	if len(nodes) != 0 {
+		return nodes[0].hand
+	}
+
+	if len(bombs) != 0 {
+		return bombs[0].hand
 	}
 
 	return nil
