@@ -546,10 +546,9 @@ func extractConsecutive(cs CardSlice, duplicate int) (CardSlice, []*Hand) {
 	handList := make([]*Hand, 0)
 
 	i := duplicate
-	cardNum := len(cs) / duplicate
 	lastRank := cs[0].Rank()
-	for cardNum > 0 {
-		if lastRank+RankInc != cs[i].Rank() {
+	for cardNum := len(cs) / duplicate; cardNum > 0; cardNum-- {
+		if i >= len(cs) || lastRank+RankInc != cs[i].Rank() {
 			if i >= chainLen[duplicate] {
 				// chain break
 				hand := &Hand{
@@ -560,7 +559,7 @@ func extractConsecutive(cs CardSlice, duplicate int) (CardSlice, []*Hand) {
 				handList = append([]*Hand{hand}, handList...)
 			} else {
 				// not a chain
-				for j := 0; j < i/duplicate; j++ {
+				for j := len(cs) / duplicate; j > 0; j-- {
 					hand := &Hand{
 						Cards: cs[0:duplicate],
 						Type:  primals[duplicate],
@@ -709,7 +708,7 @@ func StandardAnalyze(cs CardSlice) []*Hand {
 	}
 
 	// extract chains
-	for i := 2; i >= 0; i-- {
+	for i := 0; i < 3; i++ {
 		_, l := extractConsecutive(slices[i], i+1)
 		if len(l) > 0 {
 			handList = append(l, handList...)
@@ -780,38 +779,37 @@ func (ctx *handContext) findLongestConsecutive(duplicate int) *Hand {
 
 // pass in a nil hand to start traverse
 // solo, pair, trio chain and trio, pair, solo
-func (ctx *handContext) traverseChains(hand *Hand, duplicate *int) bool {
+func (ctx *handContext) traverseChains(last *Hand, duplicate *int) *Hand {
 	if len(ctx.cards) == 0 || *duplicate < 1 || *duplicate > 3 {
-		return false
+		return nil
 	}
 
-	if hand == nil {
-		for *duplicate < 4 && hand == nil {
-			hand = ctx.findLongestConsecutive(*duplicate)
-			if hand != nil {
+	if last == nil {
+		for *duplicate < 4 && last == nil {
+			last = ctx.findLongestConsecutive(*duplicate)
+			if last != nil {
 				break
 			} else {
 				*duplicate++
 			}
 		}
 	} else {
-		hand = ctx.cards.SearchBeat(hand)
+		last = ctx.cards.SearchBeat(last)
 	}
 
-	return hand != nil
+	return last
 }
 
 // extract all chains or primal hands in handContext
 func (ctx *handContext) extractAllChains() []*Hand {
 	lastSearch := 1
 	handList := make([]*Hand, 0)
-	var lastHand *Hand
-	found := ctx.traverseChains(lastHand, &lastSearch)
-	for found {
+	lastHand := ctx.traverseChains(nil, &lastSearch)
+	for lastHand != nil {
 		handList = append([]*Hand{lastHand}, handList...)
 		workingHand := lastHand.Copy()
 
-		for found = ctx.traverseChains(workingHand, &lastSearch); found; {
+		for lastHand = ctx.traverseChains(workingHand, &lastSearch); lastHand != nil; {
 			handList = append([]*Hand{workingHand}, handList...)
 		}
 
@@ -819,22 +817,18 @@ func (ctx *handContext) extractAllChains() []*Hand {
 		if lastHand != nil {
 			if lastHand.Type == handTypeSoloChain && len(lastHand.Cards) > HandSoloChainMinLength {
 				lastHand.Cards = lastHand.Cards[1:]
-				found = true
 			} else if lastHand.Type == handTypePairChain && len(lastHand.Cards) > HandPairChainMinLength {
 				lastHand.Cards = lastHand.Cards[2:]
-				found = true
 			} else if lastHand.Type == handTypeTrioChain && len(lastHand.Cards) > HandTrioChainMinLength {
 				lastHand.Cards = lastHand.Cards[3:]
-				found = true
 			} else {
-				lastHand.Type = 0
+				lastHand = nil
 			}
 
-			if !found {
+			if lastHand == nil {
 				// still can't find a chain, loop through hand type for more
 				lastSearch++
-				lastHand = nil
-				found = ctx.traverseChains(lastHand, &lastSearch)
+				lastHand = ctx.traverseChains(nil, &lastSearch)
 			}
 		}
 	}
@@ -1020,12 +1014,24 @@ type StandardEvaluator struct {
 	Evaluator
 }
 
-// StandardEvaluator evaluates a card slice
+// Evaluate evaluates a card slice using standard hand analyzer
 // return a integer value reflect slice's quality
 // the smaller the value is, the better the card slice is
 //
-func (e *StandardEvaluator) Evaluate(cs CardSlice) int {
+func (e StandardEvaluator) Evaluate(cs CardSlice) int {
 	return len(StandardAnalyze(cs))*0x10 + int(cs[len(cs)-1].Rank())
+}
+
+type AdvancedEvaluator struct {
+	Evaluator
+}
+
+// Evaluate evaluates a card slice using advanced hand analyzer
+// return a integer value reflect slice's quality
+// the smaller the value is, the better the card slice is
+//
+func (e AdvancedEvaluator) Evaluate(cs CardSlice) int {
+	return len(AdvancedAnalyze(cs))
 }
 
 func bestBeat(cs CardSlice, toBeat *Hand, evaluator Evaluator) *Hand {

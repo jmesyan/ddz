@@ -24,22 +24,22 @@ func TestNewHandContext(t *testing.T) {
 	//		}
 	//	})
 	//}
-	cs := CardSlice{
-		Diamond3,
-		Diamond4,
-		Diamond5,
-		Diamond6,
-		Diamond7,
-		Heart9,
-		HeartT,
-		HeartJ,
-		HeartQ,
-		HeartK,
-		HeartA,
+	str := "♣3 ♣4 ♠5 ♦6 ♠6 ♥7 ♠7 ♦7 ♦8 ♣8 ♣9 ♦9 ♦T"
+	cs, err := CardSliceFromString(str, " ")
+	if err != nil {
+		t.Error(err)
 	}
-	ctx := newHandContext(cs)
-	h := ctx.findLongestConsecutive(1)
-	fmt.Println(h)
+	stdHands := StandardAnalyze(cs)
+	for _, h := range stdHands {
+		fmt.Println(h)
+	}
+
+	fmt.Println("---------------------")
+
+	advHands := AdvancedAnalyze(cs)
+	for _, h := range advHands {
+		fmt.Println(h)
+	}
 }
 
 func TestHandContext_Update(t *testing.T) {

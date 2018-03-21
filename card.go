@@ -2,6 +2,7 @@ package ddz
 
 import (
 	"errors"
+	"math/bits"
 	"math/rand"
 	"sort"
 	"strconv"
@@ -353,7 +354,7 @@ func (cs CardSlice) String() string {
 // Sort cards in ascending order
 func (cs CardSlice) Sort() CardSlice {
 	sort.Slice(cs, func(i, j int) bool {
-		return cs[i] < cs[j]
+		return bits.RotateLeft8(uint8(cs[i]), 4) < bits.RotateLeft8(uint8(cs[j]), 4)
 	})
 
 	return cs
@@ -493,6 +494,7 @@ func (rc RankCount) Copy() RankCount {
 
 // Update count ranks in card slice
 func (rc *RankCount) Update(cs CardSlice) {
+	copy(rc[:], []int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
 	for _, v := range cs {
 		rc[v.Rank()]++
 	}
