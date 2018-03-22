@@ -13,7 +13,7 @@ func TestHand_Copy(t *testing.T) {
 	tests := []struct {
 		name   string
 		fields fields
-		want   Hand
+		want   *Hand
 	}{
 		// TODO: Add test cases.
 	}
