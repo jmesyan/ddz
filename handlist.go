@@ -1034,7 +1034,8 @@ func (e AdvancedEvaluator) Evaluate(cs CardSlice) int {
 	return len(AdvancedAnalyze(cs))
 }
 
-func bestBeat(cs CardSlice, toBeat *Hand, evaluator Evaluator) *Hand {
+// BestBeat find and evaluate beats in card slice and return the best one
+func BestBeat(cs CardSlice, toBeat *Hand, evaluator Evaluator) *Hand {
 	if evaluator == nil {
 		evaluator = StandardEvaluator{}
 	}
