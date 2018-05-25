@@ -26,9 +26,32 @@ const (
 
 type Phase int
 
-const ()
+const (
+	PhasePlay  Phase = 0
+	PhaseQuery Phase = 1
+	PhasePass  Phase = 2
+)
 
-type Game struct {
+type Game interface {
+	GetNextPlayer() Player
+	LastHand() *Hand
+	KittyCards() CardSlice
+	HighestBidder() Player
+	Landlord() Player
+	Status() Status
+	Phase() Phase
+}
+
+type Player interface {
+	GetReady(g *Game)
+	Bid(g *Game) BidAction
+	Start(g *Game)
+	Play(g *Game) *Hand
+	Beat(g *Game) *Hand
+}
+
+type SimpleGame struct {
+	Game
 	players       []*Player // players
 	deck          CardSlice // deck
 	lastHand      *Hand     // last hand played
@@ -37,13 +60,20 @@ type Game struct {
 	highestBidder *Player   // the highest bidder
 	landlord      *Player   // landlord player
 	winner        *Player   // player wins last game
-	status        int
+	status        Status    // game status
+	phase         Phase     // game phase
 }
 
-type Player interface {
-	GetReady()
-	Bid()
-	Start()
-	Play()
-	Beat()
+type SimplePlayer struct {
+	Player
+	cards     CardSlice      // card slice, will change during game play
+	record    CardSlice      // card record
+	handList  []*Hand        // analyze result of card slice
+	identity  PlayerIdentity // player identity
+	seatIndex int
+	bid       int
+}
+
+func (p *SimplePlayer) GetReady(g *Game) {
+
 }
